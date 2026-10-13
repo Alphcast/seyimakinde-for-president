@@ -802,7 +802,7 @@
     <main>
       <canvas id="stage" role="img" aria-label="3D stage showing three portrait panels"></canvas>
       <div id="fallback" aria-label="Portrait panels"></div>
-      <p class="hint">Hover or tap a portrait for confetti · keys: C celebrate · T theme · P pause · F fullscreen</p>
+      <p class="hint">Hover or tap a portrait for confetti · keys: C celebrate · T theme · F fullscreen</p>
       <div id="hits"></div>
       <aside id="detail" role="dialog" aria-live="polite" aria-labelledby="dName"><button id="dClose"
           aria-label="Close">×</button>
@@ -812,7 +812,8 @@
         <p id="dNote"></p>
       </aside>
       <div class="controls" role="toolbar" aria-label="Display controls"><button id="bCel">🎉 Celebrate</button><button
-          id="bPause" aria-pressed="false">⏸ Pause</button><button id="bTheme">🎨 Gold</button><button id="bFs">⛶
+          id="bPause" aria-label="Open courtesy profile" type="button">🤝 Courtesy</button><button id="bTheme">🎨
+          Gold</button><button id="bFs">⛶
           Fullscreen</button></div>
     </main>
     <div class="ticker" aria-label="Information ticker">
@@ -956,6 +957,27 @@
     })();
 
     const CANDIDATE_CAMPAIGNS = {
+      courtesy: {
+        fullName: "Oladepo Rokeeb Olayinka",
+        headline: "COURTESY PROFILE",
+        subheadline: "APPRECIATION, SERVICE AND FUTURE PARTNERSHIP",
+        statement: '"I created this initiative to show appreciation to Governor Seyi Makinde and Hon. Adedeji Odidiomo for the good work they are doing for Oyo State and their people."',
+        intro: "I am Oladepo Rokeeb Olayinka, a software, hardware, and AI engineer, and a passionate mathematics graduate from Tai Solarin Federal University of Education. This initiative was created to express my sincere gratitude to Governor Seyi Makinde for the meaningful progress and people-centred development he has brought to Oyo State. I also appreciate Hon. Adedeji Stanley Olajide Odidiomo for the exceptional work he has done for his constituency as a member of the House of Representatives, and I believe that if he becomes a senator, he will continue to serve with the same dedication and impact. We believe in continuing the good work already started by Governor Seyi Makinde and building on that strong foundation so progress can continue from where he stopped. I am a CORP member, and I would be grateful for any encouragement, support, or partnership that could help this vision grow. Contact: +2347059173318 | oladeporokeeb203@gmail.com.",
+        record: "Software, hardware, and AI engineering; grassroots appreciation; youth advocacy; CORP service; and a sincere commitment to progress, continuity, and public service.",
+        image: "courtesy.svg",
+        slogans: [
+          "Appreciation for Good Leadership",
+          "Continuity, Progress, and Service",
+          "Technology for Development",
+          "Support for People-Centred Governance",
+          "Building on the Foundation of Good Leadership"
+        ],
+        achievements: [
+          { title: "Personal Profile", items: [{ name: "Software, Hardware and AI Engineer", description: "I work across digital systems, hardware understanding, and AI-driven problem solving, with a strong interest in how technology can improve public life and economic opportunity.", status: "professional", year: "present", source: "#", verified: "self-declared" }, { name: "Mathematics Graduate", description: "I graduated with a passion for mathematics, logic, and disciplined problem-solving, which informs my approach to innovation and service.", status: "academic", year: "degree", source: "#", verified: "self-declared" }, { name: "CORP Member", description: "I am a member of the National Youth Service Corps (NYSC), demonstrating my commitment to national service and community development.", status: "service", year: "present", source: "#", verified: "self-declared" }] },
+          { title: "Mission and Appreciation", items: [{ name: "Appreciation for Oyo State Leadership", description: "This idea was born from gratitude for the positive developments and good governance that Governor Seyi Makinde has brought to Oyo State. His work has inspired many of us to believe in progress that is both visible and people-focused.", status: "message", year: "2026", source: "#", verified: "self-declared" }, { name: "Support for Odidiomo's Constituency Work", description: "I also appreciate Hon. Adedeji Stanley Olajide Odidiomo for the support and development he has brought to his constituency, and I believe that if he becomes a senator, his people will continue to benefit from his leadership and service.", status: "message", year: "2026", source: "#", verified: "self-declared" }, { name: "Vision for Continuity", description: "We believe in continuing the work already started by Governor Seyi Makinde and building on the good foundation he has laid so that progress can continue from where he stopped.", status: "vision", year: "2026", source: "#", verified: "self-declared" }] }
+        ],
+        timeline: [{ date: "Present", title: "Purpose and message", description: "I created this appreciation initiative to express gratitude to Governor Seyi Makinde and Hon. Odidiomo for the good work they are doing and the hope they inspire in the people.", type: "personal" }, { date: "Present", title: "Professional commitment", description: "As a software, hardware, and AI engineer, I remain committed to using my knowledge and skills to support development, innovation, and youth empowerment.", type: "professional" }, { date: "Present", title: "Call for partnership and support", description: "I sincerely hope this message will encourage the governor and the candidate to see the sincerity of my intention and support this vision with encouragement, guidance, or assistance where possible.", type: "partnership" }]
+      },
       makinde: {
         fullName: "ABIODUN SEYI MAKINDE",
         headline: "SEYI MAKINDE 2027",
@@ -1396,7 +1418,7 @@
     (async function boot() {
       UI.init();
       const root = document.documentElement, $ = id => document.getElementById(id);
-      let webgl = false, themeIdx = 0, paused = false;
+      let webgl = false, themeIdx = 0;
       CampaignExperience.init();
       if (Scene3D.supported()) {
         try {
@@ -1427,17 +1449,14 @@
         Object.assign(CONFIG.colors, { metal: th.metal, accent: th.accent, beam: th.beam });
         UI.applyTheme(); if (webgl) Scene3D.setTheme(th); $("bTheme").textContent = "🎨 " + th.name;
       };
-      const togglePause = () => {
-        paused = !paused; root.classList.toggle("paused", paused); if (webgl) Scene3D.setPaused(paused);
-        $("bPause").textContent = paused ? "▶ Play" : "⏸ Pause"; $("bPause").setAttribute("aria-pressed", paused);
-      };
+      const openCourtesy = () => CampaignExperience.open("courtesy");
       const fullscreen = () => document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen && root.requestFullscreen();
       $("bCel").onclick = celebrate; $("bTheme").onclick = () => setTheme(themeIdx + 1);
-      $("bPause").onclick = togglePause; $("bFs").onclick = fullscreen;
+      $("bPause").onclick = openCourtesy; $("bFs").onclick = fullscreen;
       if (!document.fullscreenEnabled) $("bFs").hidden = true;
       addEventListener("keydown", e => {
         if (e.ctrlKey || e.metaKey || e.altKey) return; const k = e.key.toLowerCase();
-        if (k === "c") celebrate(); else if (k === "t") setTheme(themeIdx + 1); else if (k === "p") togglePause();
+        if (k === "c") celebrate(); else if (k === "t") setTheme(themeIdx + 1);
         else if (k === "f") fullscreen(); else if (k === "escape") UI.hideDetail();
         else if (/^[1-9]$/.test(k) && CONFIG.portraits[k - 1]) webgl ? Scene3D.select(k - 1) : UI.showDetail(k - 1);
       });
