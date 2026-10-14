@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Campaign Display</title>
+  <style>
+    /* ===== Tokens ===== */
+    :root {
+      --bg: #07090f;
+      --ink: #f5f1e6;
+      --muted: #b9b3a3;
+      --accent: #d4af37;
+      --bar: rgba(7, 9, 15, .82);
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      overflow-x: hidden;
+      overflow-y: auto
+    }
+
+    html {
+      scroll-padding-top: env(safe-area-inset-top, 0px)
+    }
+
+    body {
+      overscroll-behavior-y: contain
+    }
+
+    /* ===== Layout ===== */
+    .app {
+      position: relative;
+      height: 100%;
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr auto
+    }
+
+    header {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 14px clamp(12px, 3vw, 32px) 0
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap
+    }
+
+    .brand-logo {
+      display: block;
+      width: clamp(74px, 8vw, 118px);
+      height: auto;
+      border-radius: 14px;
+      border: 2px solid rgba(212, 175, 55, .7);
+      background: rgba(255, 255, 255, .04);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, .35)
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.3rem, 4.2vw, 3rem);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      line-height: 1.1;
+      text-shadow: 0 2px 14px #000
+    }
+
+    h1 .w {
+      display: inline-block;
+      white-space: pre
+    }
+
+    h1 .ch {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(.6em) rotateX(70deg);
+      animation: chIn .8s cubic-bezier(.2, .8, .2, 1) forwards;
+      animation-delay: calc(var(--i)*45ms)
+    }
+
+    h1 .ch.gold {
+      color: var(--accent)
+    }
+
+    @keyframes chIn {
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .sub {
+      margin: .4em 0 0;
+      color: var(--muted);
+      font: clamp(.7rem, 1.6vw, 1rem) system-ui, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase
+    }
+
+    .clock {
+      font: 600 clamp(1rem, 2.6vw, 1.8rem) ui-monospace, Menlo, Consolas, monospace;
+      color: var(--accent);
+      background: var(--bar);
+      border: 1px solid rgba(212, 175, 55, .45);
+      border-radius: 8px;
+      padding: .35em .7em;
+      text-align: right;
+      white-space: nowrap
+    }
+
+    .clock small {
+      display: block;
+      font: .55em system-ui, sans-serif;
+      color: var(--muted);
+      letter-spacing: .1em
+    }
+
+    main {
+      position: relative;
+      min-height: 0
+    }
+
+    #stage,
+    #fallback {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%
+    }
+
+    #stage {
+      display: block;
+      touch-action: pan-y
+    }
+
+    #fallback {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(8px, 2vw, 28px);
+      padding: 16px;
+      flex-wrap: wrap;
+      overflow: auto
+    }
+
+    .no-webgl #stage {
+      display: none
+    }
+
+    .no-webgl #fallback {
+      display: flex
+    }
+
+    .card {
+      width: min(30%, 240px);
+      min-width: 130px;
+      background: linear-gradient(160deg, #2a2a2e, #111);
+      border: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center
+    }
+
+    .card .ph {
+      aspect-ratio: 3/4;
+      background: #1b1d26 center/cover;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font: 12px system-ui
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin: .6em 0 .1em
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font: .8rem system-ui
+    }
+
+    .live-note {
+      position: absolute;
+      left: -9999px
+    }
+
+    .campaign-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      z-index: 120;
+      background: rgba(5, 8, 12, .72);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .25s ease, visibility .25s ease
+    }
+
+    .campaign-modal.on {
+      opacity: 1;
+      visibility: visible
+    }
+
+    .campaign-panel {
+      position: relative;
+      width: min(1080px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      background: linear-gradient(180deg, #08110d, #0d1716 25%, #111a1b 100%);
+      border: 1px solid rgba(84, 190, 132, .5);
+      border-radius: 24px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .5)
+    }
+
+    .campaign-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      background: rgba(11, 16, 15, .7);
+      color: var(--ink);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+      z-index: 2
+    }
+
+    .campaign-close:hover,
+    .campaign-close:focus-visible {
+      outline: none;
+      background: #0d2e1d;
+      border-color: rgba(143, 220, 173, .8)
+    }
+
+    .campaign-body {
+      padding: 28px clamp(18px, 4vw, 42px) 42px
+    }
+
+    .campaign-hero {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 24px;
+      align-items: center;
+      padding: 18px 0 8px
+    }
+
+    .campaign-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid rgba(143, 220, 173, .5);
+      border-radius: 999px;
+      background: rgba(17, 52, 36, .7);
+      color: #dff9e9;
+      font: 700 .72rem system-ui, sans-serif;
+      letter-spacing: .14em;
+      text-transform: uppercase
+    }
+
+    .campaign-hero h2 {
+      margin: 14px 0 6px;
+      font-size: clamp(2.3rem, 5vw, 4.2rem);
+      line-height: 1.03;
+      letter-spacing: .04em
+    }
+
+    .campaign-hero h3 {
+      margin: 0 0 12px;
+      color: #d9f7e6;
+      font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+      letter-spacing: .12em;
+      text-transform: uppercase
+    }
+
+    .campaign-hero p {
+      margin: 0;
+      color: #d3dfe2;
+      max-width: 58ch;
+      line-height: 1.7;
+      font-size: 1.02rem
+    }
+
+    .campaign-hero-figure {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px
+    }
+
+    .campaign-hero-figure img {
+      width: min(100%, 360px);
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      border-radius: 18px;
+      border: 2px solid rgba(143, 220, 173, .5);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, .35)
+    }
+
+    .campaign-statement {
+      margin: 18px 0 18px;
+      padding: 16px 18px;
+      border-left: 4px solid #a8e6b3;
+      background: rgba(24, 38, 31, .65);
+      border-radius: 12px;
+      color: #f0fff3;
+      font-size: 1.05rem
+    }
+
+    .campaign-grid {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 22px;
+      margin-top: 24px
+    }
+
+    .campaign-card {
+      background: rgba(13, 21, 19, .68);
+      border: 1px solid rgba(143, 220, 173, .15);
+      border-radius: 18px;
+      padding: 20px
+    }
+
+    .campaign-card h4 {
+      margin: 0 0 10px;
+      color: #dff9e9;
+      font-size: 1rem;
+      letter-spacing: .12em;
+      text-transform: uppercase
+    }
+
+    .campaign-card ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      display: grid;
+      gap: 8px;
+      color: #dfe9e7;
+      line-height: 1.6
+    }
+
+    .campaign-slogans {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      list-style: none;
+      padding: 0;
+      margin: 0
+    }
+
+    .campaign-slogans li {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(201, 216, 218, .18);
+      background: rgba(18, 31, 28, .8);
+      color: #ebf9ef;
+      font: 600 .8rem system-ui, sans-serif
+    }
+
+    .campaign-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 20px 0 8px
+    }
+
+    .campaign-actions a,
+    .campaign-actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(143, 220, 173, .7);
+      font: 700 .9rem system-ui, sans-serif;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform .2s ease, background .2s ease
+    }
+
+    .campaign-actions a {
+      background: #dff9e9;
+      color: #061309
+    }
+
+    .campaign-actions button {
+      background: rgba(16, 26, 23, .8);
+      color: #edf9f0
+    }
+
+    .campaign-actions a:hover,
+    .campaign-actions a:focus-visible,
+    .campaign-actions button:hover,
+    .campaign-actions button:focus-visible {
+      transform: translateY(-1px);
+      outline: none
+    }
+
+    .campaign-section {
+      margin-top: 28px
+    }
+
+    .campaign-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(143, 220, 173, .18);
+      padding-bottom: 10px
+    }
+
+    .campaign-section-header h3 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2vw, 1.75rem)
+    }
+
+    .campaign-section-header span {
+      color: #bfdbd4;
+      font-size: .8rem;
+      letter-spacing: .12em;
+      text-transform: uppercase
+    }
+
+    .achievement-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px
+    }
+
+    .achievement-item {
+      border: 1px solid rgba(143, 220, 173, .22);
+      border-radius: 16px;
+      background: rgba(14, 22, 20, .7);
+      overflow: hidden
+    }
+
+    .achievement-item summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px
+    }
+
+    .achievement-item summary::-webkit-details-marker {
+      display: none
+    }
+
+    .achievement-item[open] summary {
+      border-bottom: 1px solid rgba(143, 220, 173, .18)
+    }
+
+    .achievement-name {
+      font-weight: 700;
+      color: #edf9f0
+    }
+
+    .achievement-status {
+      display: inline-flex;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(143, 220, 173, .12);
+      border: 1px solid rgba(143, 220, 173, .3);
+      font: 700 .72rem system-ui, sans-serif;
+      color: #dff9e9;
+      text-transform: uppercase;
+      letter-spacing: .08em
+    }
+
+    .achievement-meta {
+      margin-top: 4px;
+      color: #bfd7d2;
+      font-size: .82rem
+    }
+
+    .achievement-body {
+      padding: 16px 18px 18px;
+      color: #dbe8e5;
+      line-height: 1.7
+    }
+
+    .achievement-body p {
+      margin: 0 0 10px
+    }
+
+    .achievement-body a {
+      color: #b4f3c9
+    }
+
+    .timeline {
+      position: relative;
+      margin: 18px 0 0;
+      padding-left: 18px;
+      border-left: 2px solid rgba(143, 220, 173, .3)
+    }
+
+    .timeline-item {
+      position: relative;
+      padding: 0 0 20px 18px
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -22px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #a8e6b3;
+      border: 2px solid #0e1f18;
+      box-shadow: 0 0 0 3px rgba(168, 230, 179, .24)
+    }
+
+    .timeline-item strong {
+      display: block;
+      color: #edf9f0;
+      font-size: 1.02rem;
+      margin-bottom: 4px
+    }
+
+    .timeline-item span {
+      display: block;
+      color: #a8d4cb;
+      font-size: .78rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 4px
+    }
+
+    .timeline-item p {
+      margin: 0;
+      color: #dfe9e7;
+      line-height: 1.6
+    }
+
+    @media (max-width:800px) {
+
+      .campaign-hero,
+      .campaign-grid,
+      .achievement-list {
+        grid-template-columns: 1fr
+      }
+
+      .campaign-panel {
+        max-height: calc(100dvh - 16px);
+        border-radius: 16px
+      }
+
+      .campaign-body {
+        padding-top: 18px
+      }
+
+      .campaign-hero {
+        padding-top: 8px
+      }
+    }
+
+    @media (max-width:640px) {
+      .app {
+        min-height: 100dvh;
+        height: 100dvh
+      }
+
+      header {
+        gap: 10px;
+        padding: 12px 12px 0
+      }
+
+      .brand-wrap {
+        width: 100%;
+        justify-content: space-between;
+        align-items: center
+      }
+
+      .sub {
+        margin-top: 0;
+        letter-spacing: .1em
+      }
+
+      .clock {
+        display: block;
+        width: 100%;
+        text-align: left
+      }
+
+      main {
+        padding-bottom: 44px
+      }
+
+      #stage,
+      #fallback {
+        inset: 0 0 54px 0;
+        height: calc(100% - 54px)
+      }
+
+      .hint {
+        top: 8px;
+        width: 84%;
+        font-size: .56rem;
+        line-height: 1.5;
+        letter-spacing: .05em
+      }
+
+      .controls {
+        bottom: 6px;
+        width: calc(100% - 16px);
+        max-width: 430px
+      }
+
+      .controls button {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 0;
+        padding: .6em .7em
+      }
+
+      .campaign-modal {
+        padding: 8px
+      }
+
+      .campaign-panel {
+        width: 100%;
+        max-height: 100dvh;
+        border-radius: 14px
+      }
+    }
+
+    @media (max-width:420px) {
+      header {
+        padding-top: 10px
+      }
+
+      h1 {
+        font-size: clamp(1.1rem, 7vw, 1.8rem)
+      }
+
+      .brand-logo {
+        width: clamp(54px, 16vw, 76px)
+      }
+
+      .campaign-body {
+        padding: 18px 14px 24px
+      }
+
+      .campaign-hero {
+        gap: 16px
+      }
+
+      .campaign-hero h2 {
+        font-size: clamp(2rem, 11vw, 2.8rem)
+      }
+
+      .campaign-hero h3 {
+        letter-spacing: .06em
+      }
+
+      .campaign-actions {
+        flex-direction: column
+      }
+
+      .campaign-actions a,
+      .campaign-actions button {
+        width: 100%
+      }
+
+      .campaign-section-header {
+        flex-direction: column;
+        align-items: flex-start
+      }
+
+      .achievement-list {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* ===== Ticker ===== */
+    .ticker {
+      position: relative;
+      z-index: 3;
+      overflow: hidden;
+      background: var(--bar);
+      border-top: 2px solid var(--accent);
+      font: 600 clamp(.8rem, 1.8vw, 1.05rem) system-ui, sans-serif;
+      letter-spacing: .06em;
+      text-transform: uppercase
+    }
+
+    .track {
+      display: flex;
+      width: max-content;
+      animation: scroll var(--dur, 40s) linear infinite;
+      padding: .8em 0
+    }
+
+    .track span {
+      padding: 0 2.2rem;
+      white-space: nowrap
+    }
+
+    .track span::before {
+      content: "◆";
+      color: var(--accent);
+      margin-right: 2.2rem
+    }
+
+    .ticker:hover .track {
+      animation-play-state: paused
+    }
+
+    @keyframes scroll {
+      to {
+        transform: translateX(-50%)
+      }
+    }
+
+    /* ===== Reduced motion ===== */
+    .reduce h1 .ch {
+      animation: none;
+      opacity: 1;
+      transform: none
+    }
+
+    .reduce .track {
+      animation: none;
+      width: auto;
+      flex-wrap: wrap;
+      white-space: normal;
+      justify-content: center
+    }
+
+    .reduce .track span[aria-hidden] {
+      display: none
+    }
+
+    /* ===== v2 ===== */
+    .controls {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      z-index: 4;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 96%
+    }
+
+    .controls button {
+      font: 600 clamp(.7rem, 1.7vw, .85rem) system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bar);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: .55em 1em;
+      cursor: pointer;
+      min-height: 40px;
+      backdrop-filter: blur(6px)
+    }
+
+    .controls button:hover,
+    .controls button:focus-visible {
+      background: var(--accent);
+      color: #000;
+      outline: none
+    }
+
+    .hint {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      font: .72rem system-ui, sans-serif;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-align: center;
+      pointer-events: none;
+      width: 92%
+    }
+
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap
+    }
+
+    #detail {
+      position: absolute;
+      z-index: 5;
+      left: 50%;
+      bottom: 64px;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      width: min(92%, 420px);
+      background: rgba(10, 12, 18, .92);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 16px 20px;
+      text-align: center;
+      transition: opacity .35s, transform .35s;
+      box-shadow: 0 12px 40px #000a
+    }
+
+    #detail.on {
+      opacity: 1;
+      transform: translate(-50%, 0);
+      pointer-events: auto
+    }
+
+    #detail h2 {
+      margin: 0 0 .2em;
+      font-size: 1.5rem
+    }
+
+    #detail p {
+      margin: .2em 0;
+      color: var(--muted);
+      font: .95rem system-ui, sans-serif
+    }
+
+    #detail .lab {
+      color: var(--accent);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-weight: 700
+    }
+
+    #dClose {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      background: none;
+      border: 0;
+      color: var(--ink);
+      font-size: 1.6rem;
+      cursor: pointer;
+      min-width: 40px;
+      min-height: 40px
+    }
+
+    .paused .track {
+      animation-play-state: paused
+    }
+
+    .card {
+      cursor: pointer;
+      transition: transform .25s
+    }
+
+    .card:hover,
+    .card:focus-visible {
+      transform: translateY(-6px) scale(1.03);
+      outline: none
+    }
+
+    .cf {
+      position: fixed;
+      width: 8px;
+      height: 12px;
+      z-index: 50;
+      pointer-events: none;
+      border-radius: 1px
+    }
+
+    @media (max-width:600px) {
+      header {
+        flex-direction: column
+      }
+
+      .clock {
+        align-self: flex-start;
+        text-align: left
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="brand-wrap">
+        <h1 id="heading" aria-label=""></h1>
+        <img class="brand-logo" src="APM.jpeg" alt="Allied Peoples Movement logo" />
+      </div>
+      <p class="sub" id="subheading"></p>
+      <div class="clock" role="timer" aria-label="Local time"><span id="time">--:--:--</span><small id="date"></small>
+      </div>
+    </header>
+    <main>
+      <canvas id="stage" role="img" aria-label="3D stage showing three portrait panels"></canvas>
+      <div id="fallback" aria-label="Portrait panels"></div>
+      <p class="hint">Hover or tap a portrait for confetti · keys: C celebrate · T theme · F fullscreen</p>
+      <div id="hits"></div>
+      <aside id="detail" role="dialog" aria-live="polite" aria-labelledby="dName"><button id="dClose"
+          aria-label="Close">×</button>
+        <h2 id="dName"></h2>
+        <p id="dTitle"></p>
+        <p class="lab" id="dLabel"></p>
+        <p id="dNote"></p>
+      </aside>
+      <div class="controls" role="toolbar" aria-label="Display controls"><button id="bCel">🎉 Celebrate</button><button
+          id="bPause" aria-label="Open courtesy profile" type="button">🤝 Courtesy</button><button id="bTheme">🎨
+          Gold</button><button id="bFs">⛶
+          Fullscreen</button></div>
+    </main>
+    <div class="ticker" aria-label="Information ticker">
+      <div class="track" id="track"></div>
+    </div>
+  </div>
+
+  <div id="campaignModal" class="campaign-modal" aria-hidden="true">
+    <div class="campaign-panel" role="dialog" aria-modal="true" aria-labelledby="campaignTitle">
+      <button id="campaignClose" class="campaign-close" type="button" aria-label="Close campaign profile">×</button>
+      <div id="campaignBody" class="campaign-body"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    /* =====================================================================
+       1. CONFIGURATION — edit ONLY this section to change content.
+       - portraits[].image : URL / relative path / data: URI. Leave "" or if it
+         fails to load, a neutral labelled placeholder is shown. Use only
+         photographs you have rights/permission to display.
+       - portraits[].note : optional short text shown in the pop-up card (verified facts only).
+       - Colors are CSS hex strings. Ticker items are plain text.
+       - Nothing here is a claim about real people; replace all placeholders.
+       ===================================================================== */
+    const CONFIG = {
+      heading: { text: "APM", goldWords: [1], subtitle: "Allied Peoples Movement" },
+      portraits: [
+        { id: "adekanmbi", name: "Hon. Abimbola \"Bimbo\" Adekanmbi", title: "Candidate", label: "APM Candidate", image: "Adekanmi.jpg", note: "" },
+        { id: "makinde", name: "ABIODUN SEYI MAKINDE", title: "Candidate", label: "APM Candidate", image: "makinde.jpg", note: "" },
+        { id: "odidiomo", name: "Hon. Adedeji Stanley Olajide Odidiomo", title: "Candidate", label: "APM Candidate", image: "Odidiomo.jpg", note: "" }
+      ],
+      ticker: [
+        "SEYI 2027 — Movement for Nigeria",
+        "Leadership, Service and Accountability",
+        "Public Service. Measurable Results. National Conversation."
+      ],
+      tickerSecondsPerLoop: 40,
+      colors: {
+        background: "#07090f", stage: "#14161f", metal: "#d4af37", accent: "#d4af37",
+        beam: "#ffe3a3", text: "#f5f1e6", muted: "#b9b3a3"
+      },
+      clock: { hour12: false, showDate: true },
+      scene: {
+        maxPixelRatio: 1.75, maxTextureSize: 1024, particleCount: 220,
+        focusCycleSeconds: 4.5, parallax: 0.6
+      },
+      confetti: { piecesPerHover: 45, piecesPerClick: 220, hoverCooldownMs: 700 },
+      themes: [   // press T or the Theme button to cycle
+        { name: "Gold", metal: "#d4af37", accent: "#d4af37", beam: "#ffe3a3", confetti: ["#d4af37", "#ffffff", "#ffe3a3", "#c0392b", "#2e86de"] },
+        { name: "Sapphire", metal: "#9bb7ff", accent: "#6ea8ff", beam: "#bcd7ff", confetti: ["#6ea8ff", "#ffffff", "#bcd7ff", "#f5c542", "#ff6b9d"] },
+        { name: "Emerald", metal: "#7fe0b0", accent: "#3ddc97", beam: "#c9ffe6", confetti: ["#3ddc97", "#ffffff", "#c9ffe6", "#f5c542", "#ff7a59"] }
+      ]
+    };
+
+    /* =====================================================================
+       2. UI MODULE — text, heading animation, ticker, clock, fallback
+       ===================================================================== */
+    const UI = (() => {
+      const $ = id => document.getElementById(id);
+      const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+      function applyTheme() {
+        const r = document.documentElement.style, c = CONFIG.colors;
+        r.setProperty("--bg", c.background); r.setProperty("--ink", c.text);
+        r.setProperty("--muted", c.muted); r.setProperty("--accent", c.accent);
+        document.body.style.background = c.background;
+      }
+      function heading() {
+        const h = $("heading"), words = CONFIG.heading.text.split(" "); let i = 0;
+        h.setAttribute("aria-label", CONFIG.heading.text); h.textContent = "";
+        words.forEach((w, wi) => {
+          const ws = document.createElement("span"); ws.className = "w"; ws.setAttribute("aria-hidden", "true");
+          [...w + (wi < words.length - 1 ? " " : "")].forEach(ch => {
+            const s = document.createElement("span"); s.className = "ch" + (CONFIG.heading.goldWords.includes(wi + 1) ? " gold" : "");
+            s.style.setProperty("--i", i++); s.textContent = ch; ws.appendChild(s);
+          });
+          h.appendChild(ws);
+        });
+        $("subheading").textContent = CONFIG.heading.subtitle; document.title = CONFIG.heading.text;
+      }
+      function ticker() {
+        const t = $("track"); t.textContent = "";
+        t.style.setProperty("--dur", CONFIG.tickerSecondsPerLoop + "s");
+        [0, 1].forEach(copy => CONFIG.ticker.forEach(txt => {
+          const s = document.createElement("span"); s.textContent = txt;
+          if (copy) s.setAttribute("aria-hidden", "true"); t.appendChild(s);
+        }));
+      }
+      function clock() {
+        const tf = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: CONFIG.clock.hour12 });
+        const df = new Intl.DateTimeFormat(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+        let timer;
+        const tick = () => {
+          const n = new Date();
+          $("time").textContent = tf.format(n);
+          if (CONFIG.clock.showDate) $("date").textContent = df.format(n);
+          timer = setTimeout(tick, 1000 - n.getMilliseconds() + 5); // re-sync to the real second boundary
+        };
+        tick(); return () => clearTimeout(timer);
+      }
+      function fallback() {
+        const f = $("fallback"); f.textContent = "";
+        CONFIG.portraits.forEach(p => {
+          const c = document.createElement("article"); c.className = "card"; c.tabIndex = 0;
+          const idx = CONFIG.portraits.indexOf(p);
+          const openCampaign = () => {
+            domConfetti(c, 40); showDetail(idx);
+            CampaignExperience.open(p.id);
+          };
+          c.addEventListener("click", openCampaign);
+          c.addEventListener("mouseenter", () => domConfetti(c, 14));
+          c.addEventListener("keydown", e => { if (e.key === "Enter") { domConfetti(c, 40); openCampaign(); } });
+          const ph = document.createElement("div"); ph.className = "ph"; ph.textContent = "Photo unavailable";
+          if (p.image) { const im = new Image(); im.alt = p.name; im.onload = () => { ph.textContent = ""; ph.style.backgroundImage = `url("${p.image}")`; }; im.src = p.image; }
+          const h = document.createElement("h2"); h.textContent = p.name;
+          const t = document.createElement("p"); t.textContent = p.title + " · " + p.label;
+          c.append(ph, h, t); f.appendChild(c);
+        });
+      }
+      function showDetail(i) {
+        const p = CONFIG.portraits[i], d = $("detail");
+        $("dName").textContent = p.name; $("dTitle").textContent = p.title; $("dLabel").textContent = p.label;
+        $("dNote").textContent = p.note || ""; $("dNote").hidden = !p.note; d.classList.add("on");
+        $("dClose").onclick = hideDetail;
+      }
+      function hideDetail() { $("detail").classList.remove("on"); }
+      function domConfetti(el, n) {
+        if (reduced.matches) return;
+        const r = el.getBoundingClientRect(), c = CONFIG.colors, pal = ["#ffffff", c.accent, c.beam, "#ff5d73", "#4cc9f0"];
+        for (let k = 0; k < n; k++) {
+          const e = document.createElement("i"); e.className = "cf"; e.style.background = pal[k % pal.length];
+          e.style.left = (r.left + Math.random() * r.width) + "px"; e.style.top = (r.top + 10) + "px"; document.body.appendChild(e);
+          const dx = (Math.random() - .5) * 200, dy = 120 + Math.random() * 260;
+          e.animate([{ transform: "translate(0,0) rotate(0)", opacity: 1 }, { transform: `translate(${dx}px,${dy}px) rotate(${Math.random() * 900}deg)`, opacity: 0 }],
+            { duration: 1100 + Math.random() * 900, easing: "cubic-bezier(.2,.6,.4,1)" }).onfinish = () => e.remove();
+        }
+      }
+      function motion() { document.documentElement.classList.toggle("reduce", reduced.matches); }
+      function init() { applyTheme(); heading(); ticker(); fallback(); motion(); reduced.addEventListener("change", motion); return clock(); }
+      return { init, applyTheme, showDetail, hideDetail, domConfetti, reduced: () => reduced.matches, onMotionChange: fn => reduced.addEventListener("change", fn) };
+    })();
+
+    const CANDIDATE_CAMPAIGNS = {
+      courtesy: {
+        fullName: "Oladepo Rokeeb Olayinka",
+        headline: "COURTESY PROFILE",
+        subheadline: "APPRECIATION • SERVICE • CONTINUITY",
+        statement: '"I am deeply grateful to Governor Abiodun Seyi Makinde for the positive impact he has made in Oyo State, and to Hon. Adedeji Stanley Olajide Odidiomo for the service he has rendered to his constituency."',
+        intro: "My name is Oladepo Rokeeb Olayinka. I am a software, hardware, and AI engineer, and a passionate mathematics graduate from Tai Solarin Federal University of Education. I created this courtesy message to express my sincere appreciation to Governor Abiodun Seyi Makinde for the remarkable work he has done in Oyo State during his tenure. His leadership has brought visible progress in infrastructure, education, healthcare, youth empowerment, and people-centred governance, and I believe his achievements deserve to be recognised and celebrated. We trust in his leadership and the excellent legacy he has established for Oyo State, and we believe that if he contests for the presidency, he will bring the same dedication, wisdom, and service to the nation. We also appreciate Hon. Adedeji Stanley Olajide Odidiomo for the valuable work he has done for his constituency as a member of the House of Representatives, and we believe that if he becomes a senator, he will continue to serve with even greater dedication and impact. We extend the same respect and confidence to Hon. Abimbola \"Bimbo\" Adekanmbi, whose commitment, experience, and contributions to the state continue to inspire confidence in his ability to contribute meaningfully to the people of Oyo State. This initiative is born out of gratitude, respect, and a strong belief in continuity. We believe in building on the good foundation that Governor Seyi Makinde has laid and continuing from where he stopped. I pray for Governor Seyi Makinde, Hon. Odidiomo, and Hon. Adekanmbi, asking God to grant them wisdom, health, strength, and divine favour as they continue to serve the people. Phone: +2347059173318 | Email: oladeporokeeb203@gmail.com.",
+        record: "Software, hardware, and AI engineering; mathematics graduate; youth advocacy; appreciation for good governance; support for continuity and people-centred leadership.",
+        image: "Rokeeb.jpeg",
+        slogans: [
+          "Appreciation for Good Leadership",
+          "Continuity, Progress and Service",
+          "Technology for Development",
+          "Support for People-Centred Governance",
+          "Building on the Foundation of Good Leadership"
+        ],
+        achievements: [
+          { title: "About Me", items: [{ name: "Software, Hardware and AI Engineer", description: "I work across digital systems, hardware understanding, and AI-driven problem solving, with a strong interest in how technology can be used to improve society and empower communities.", status: "professional", year: "present", source: "#", verified: "self-declared" }, { name: "Mathematics Graduate", description: "I am a passionate mathematics graduate from Tai Solarin Federal University of Education, driven by logic, discipline, and a strong desire to contribute meaningfully to development.", status: "academic", year: "degree", source: "#", verified: "self-declared" }, { name: "CORP Member", description: "I am proud to be a member of the National Youth Service Corps (NYSC), and I remain committed to national service, community impact, and youth development.", status: "service", year: "present", source: "#", verified: "self-declared" }] },
+          { title: "Message of Gratitude", items: [{ name: "Appreciation for Governor Seyi Makinde", description: "This idea was born out of respect and gratitude for the many positive changes and genuine efforts that Governor Seyi Makinde has brought to Oyo State. His leadership has inspired hope and confidence in the people.", status: "message", year: "2026", source: "#", verified: "self-declared" }, { name: "Support for Hon. Odidiomo's Service", description: "I also appreciate Hon. Adedeji Stanley Olajide Odidiomo for being a committed representative who has supported his constituency and worked to improve the lives of the people.", status: "message", year: "2026", source: "#", verified: "self-declared" }, { name: "Vision for Continuity", description: "I believe in continuing the work that has already started, supporting good governance, and helping Oyo State move forward with strong leadership and unity.", status: "vision", year: "2026", source: "#", verified: "self-declared" }] }
+        ],
+        timeline: [{ date: "Present", title: "Courtesy and appreciation", description: "I created this initiative to honour Governor Seyi Makinde and Hon. Odidiomo for their service, leadership, and dedication to the people.", type: "personal" }, { date: "Present", title: "Professional commitment", description: "As a software, hardware, and AI engineer, I remain committed to using my skills to inspire innovation, development, and positive social impact.", type: "professional" }, { date: "Present", title: "Call for support", description: "I sincerely hope this message will be received with kindness and encouragement, and that it will inspire support for my vision and service.", type: "partnership" }]
+      },
+      makinde: {
+        fullName: "ABIODUN SEYI MAKINDE",
+        headline: "SEYI MAKINDE 2027",
+        subheadline: "MOVEMENT FOR NIGERIA",
+        statement: '"My People, I Endorse Seyi — 2027 Movement for Nigeria."',
+        intro: "Seyi Makinde is the Executive Governor of Oyo State and has positioned his public-service record around infrastructure, education, healthcare, agricultural development, and stronger social delivery. The campaign experience below is designed to present a structured overview of reported achievements and public-service priorities without making unsupported claims.",
+        record: "Leadership, public service, infrastructure, education, healthcare, economic opportunity, and a vision for Nigeria's future.",
+        image: "makinde.jpg",
+        slogans: [
+          "SEYI 2027 — Movement for Nigeria",
+          "Leadership, Service and Accountability",
+          "A Record to Examine, A Future to Discuss",
+          "Building on Progress, Preparing for Tomorrow",
+          "Infrastructure, Education and Opportunity",
+          "Our Future, Our Responsibility",
+          "Public Service. Measurable Results. National Conversation."
+        ],
+        achievements: [
+          { title: "Roads and Infrastructure", items: [{ name: "Oyo State Road Rehabilitation Programme", description: "The state reported continued rehabilitation and upgrade of roads across urban and inter-community corridors to improve mobility and public connectivity.", status: "ongoing", year: "2023–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Ibadan Circular Road", description: "The administration described this as a strategic road project intended to reduce congestion and improve movement around Ibadan metropolitan areas.", status: "ongoing", year: "2023–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Urban and Inter-Community Connectivity", description: "State programmes highlighted the importance of inter-community roads and urban mobility for trade, access, and service delivery.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }] },
+          { title: "Education", items: [{ name: "Teacher Recruitment", description: "The administration reported recruitment and deployment efforts to strengthen staffing in public schools and improve educational delivery.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Public-School Improvements", description: "State investments were reported in school infrastructure, classroom conditions, and learning environments across Oyo State.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Tertiary Institution Development", description: "The state reported support for tertiary institutions including infrastructure and learning support programmes.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "LAUTECH Ownership Transition", description: "The state reported the full ownership transition of LAUTECH to Oyo State as a major institutional milestone in the education sector.", status: "independently verified", year: "2020", source: "https://www.oyostate.gov.ng/", verified: "2020" }] },
+          { title: "Healthcare", items: [{ name: "Primary Healthcare Centre Upgrades", description: "The administration reported upgrades to primary healthcare centres to improve service availability and facility conditions.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Health-Worker Recruitment", description: "State communications reported continued recruitment of health workers to strengthen service delivery in primary care and public health programmes.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Health Insurance and Access", description: "The administration highlighted expanded pathways to healthcare access and medical support for residents.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }] },
+          { title: "Transportation", items: [{ name: "Omituntun Bus Services", description: "The Omituntun transport scheme was reported as a mass-transit initiative focused on public mobility and commuter access.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Bus Terminals", description: "State transport strategy reportedly included development of terminals and supporting public transport infrastructure.", status: "proposed", year: "2024–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Airport Development Initiatives", description: "The administration has discussed airport-related development proposals as part of broader economic and transport planning.", status: "proposed", year: "2024–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }] },
+          { title: "Agriculture and Economic Development", items: [{ name: "Fasola Agribusiness Industrial Hub", description: "This programme was reported as a major agribusiness and industrial platform to strengthen food production and value chains.", status: "ongoing", year: "2023–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Farmer Support Initiatives", description: "State programmes reported support for farming households and agricultural productivity improvement plans.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Agribusiness Investment Programmes", description: "The administration highlighted investment and partnership initiatives linked to agribusiness and rural economic expansion.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }] },
+          { title: "Security", items: [{ name: "Regional Security Support", description: "The state reported collaboration with regional security structures and support for local security operations.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Security Equipment and Operational Programmes", description: "The administration reported operational support for security agencies and security equipment provision in certain areas.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }] },
+          { title: "Workers and Pensioners", items: [{ name: "Wage Awards", description: "The state reported wage support programmes intended to improve workers' livelihoods and public-sector morale.", status: "completed", year: "2024", source: "https://www.oyostate.gov.ng/", verified: "2024" }, { name: "Pension and Gratuity Payments", description: "Reports indicated continued attention to pension and gratuity obligations for retirees and public-sector beneficiaries.", status: "ongoing", year: "2020–2027", source: "https://www.oyostate.gov.ng/", verified: "2024" }] }
+        ],
+        timeline: [{ date: "May 2019", title: "First term began", description: "Seyi Makinde was sworn in as Governor of Oyo State and began his first tenure.", type: "historical" }, { date: "2020", title: "LAUTECH ownership transition", description: "The state reported the full ownership transition of LAUTECH to Oyo State, a major institutional development in the education sector.", type: "historical" }, { date: "2023", title: "Re-election and second term", description: "Makinde was re-elected and began a second gubernatorial term, continuing major infrastructure and service-delivery programmes.", type: "historical" }, { date: "2023–2027", title: "Second-term projects and initiatives", description: "This period includes the administration's reported ongoing work in roads, education, healthcare, agriculture, transportation, and public-service delivery.", type: "ongoing" }, { date: "May 2027", title: "Scheduled end of the second term", description: "This is a future milestone marking the end of the current constitutionally scheduled second term, not a completed historical fact.", type: "future" }]
+      },
+      adekanmbi: {
+        fullName: "Hon. Abimbola \"Bimbo\" Adekanmbi",
+        headline: "HON. BIMBO ADEKANMBI",
+        subheadline: "ADMINISTRATIVE AND GOVERNMENT LEADERSHIP",
+        statement: '"Public service, institutional accountability, and strategic governance."',
+        intro: "Hon. Abimbola Bimbo Adekanmbi has built a profile around public finance, administrative leadership, and strategic governance. His career includes service as Commissioner for Finance and Revenue Planning in Oyo State and later coordinating executive office operations in the state government.",
+        record: "Administrative leadership, public finance management, institutional coordination, and governance reform.",
+        image: "Adekanmi.jpg",
+        slogans: [
+          "Leadership, Service and Accountability",
+          "Public Service. Measurable Results. National Conversation.",
+          "Governance with Discipline and Purpose"
+        ],
+        achievements: [
+          { title: "Administrative and Government Positions", items: [{ name: "Commissioner for Finance and Revenue Planning (2016–2019)", description: "He served as Commissioner for Finance of Oyo State under the administration of the late Governor Abiola Ajimobi. During his tenure, he helped stabilize the state’s economy and manage the Internal Revenue Service (IGR) at a time when the country was facing economic hardship.", status: "historical", year: "2016–2019", source: "https://www.facebook.com/guardianng/posts/the-governorship-candidate-of-the-allied-peoples-movement-apm-in-oyo-state-bimbo/1653027399518017/", verified: "2019" }, { name: "Deputy Chief of Staff", description: "Before becoming Commissioner, he held this position where he coordinated the administrative affairs of the state government palace.", status: "historical", year: "Pre-2016", source: "https://bimbo4gov.com/", verified: "2016" }, { name: "Chairman, Ibadan Airport Renovation Committee (2024–Present)", description: "Governor Seyi Makinde appointed him to lead an 11-member committee overseeing the renovation of the Samuel Ladoke Akintola International Airport to bring it back to international standards.", status: "ongoing", year: "2024–Present", source: "https://www.facebook.com/NigerianTribune/posts/honourable-abimbola-adekanmbi-a-chartered-accountant-is-a-one-time-commissioner-/1046913027464745/", verified: "2024" }] }
+        ],
+        timeline: [{ date: "2016", title: "Commissioner for Finance", description: "He was appointed Commissioner for Finance and Revenue Planning in Oyo State during a difficult economic period.", type: "historical" }, { date: "2019", title: "End of finance tenure", description: "His commissioner term concluded after the administration's first term cycle.", type: "historical" }, { date: "2024–Present", title: "Airport renovation committee leadership", description: "He was appointed to lead the committee supporting the rehabilitation of Ibadan Airport.", type: "ongoing" }]
+      },
+      odidiomo: {
+        fullName: "Hon. Adedeji Stanley Olajide Odidiomo",
+        headline: "HON. ADEDEJI ODIDIOMO",
+        subheadline: "TECHNOLOGY, YOUTH EMPOWERMENT AND COMMUNITY DEVELOPMENT",
+        statement: '"Technology, opportunity, and community-driven development."',
+        intro: "Hon. Adedeji Stanley Olajide Odidiomo is widely associated with digital technology, youth development, grassroots philanthropy, and public-interest advocacy. His profile highlights professional recognition in ICT and a record of educational, technological, and community support initiatives.",
+        record: "Digital infrastructure, technology leadership, youth empowerment, and grassroots development.",
+        image: "Odidiomo.jpg",
+        slogans: [
+          "Innovation. Inclusion. Impact.",
+          "Technology for People, Progress for Communities",
+          "Public Service. Measurable Results. National Conversation."
+        ],
+        achievements: [
+          { title: "Professional & Technological Achievements", items: [{ name: "Fellow of the Nigeria Computer Society (FNCS)", description: "Conferred the prestigious FNCS status by the National Executive Council of the Nigeria Computer Society in November 2025 in recognition of his contributions to digital infrastructure, cybersecurity, and cloud computing.", status: "verified", year: "2025", source: "https://nationalecho.com.ng/hon-olajide-achieves-prestigious-fncs-rank-for-ict-contributions/", verified: "2025" }, { name: "Infrastructure & Utilities", description: "Provided community transformers, solar street lighting projects (including pledges for 9,000 solar street lights across Oyo South and wards), and boreholes for markets and religious centers.", status: "ongoing", year: "2024–2027", source: "https://www.instagram.com/adedejiodidiomo/", verified: "2025" }] },
+          { title: "Education & Youth Empowerment", items: [{ name: "Odidiomo Students’ Legislative Summit", description: "Sponsored the Odidiomo Students’ Legislative Summit with a ₦50 million grant, encouraging students to embrace AI, data, and innovation.", status: "completed", year: "2025", source: "https://www.instagram.com/reel/DO5bnJRjHpo/", verified: "2025" }, { name: "Digital Skills and Laptop Empowerment", description: "Partnered with the National Information Technology Development Agency (NITDA) to train 210 youths in digital skills, providing each participant with a brand-new laptop and logistics support.", status: "completed", year: "2025", source: "https://www.instagram.com/adedejiodidiomo/reels/", verified: "2025" }, { name: "School Renovation and ICT Support", description: "Funded school renovations, provision of school furniture, and ICT support for schools.", status: "ongoing", year: "2024–2027", source: "https://www.facebook.com/adesinaasa.culture/posts/know-your-candidatehon-adedeji-dhikrullah-stanley-olajide-odidiomo-fncshon-adede/28053164957701488/", verified: "2025" }] },
+          { title: "Community & Philanthropy", items: [{ name: "Support to Markets and Community Groups", description: "Made multi-million naira donations and financial interventions to local associations, markets, and religious communities, alongside free medical outreaches and economic empowerment programmes in agriculture and trades.", status: "ongoing", year: "2024–2027", source: "https://x.com/AdedejiOdidiOmo", verified: "2025" }] }
+        ],
+        timeline: [{ date: "2025", title: "FNCS conferment", description: "Hon. Adedeji Stanley Olajide Odidiomo was conferred as a Fellow of the Nigeria Computer Society in recognition of his contributions to ICT and digital development.", type: "historical" }, { date: "2025", title: "Youth digital empowerment programme", description: "He partnered with NITDA to train youths and provide laptops for digital skills development.", type: "completed" }, { date: "2024–2027", title: "Community and infrastructure support", description: "He continued to support solar lighting, infrastructure projects, educational support, and grassroots empowerment efforts.", type: "ongoing" }]
+      }
+    };
+
+    const CampaignExperience = (() => {
+      const modal = document.getElementById("campaignModal");
+      const body = document.getElementById("campaignBody");
+      const closeBtn = document.getElementById("campaignClose");
+
+      function render(profileKey = "makinde") {
+        const profile = CANDIDATE_CAMPAIGNS[profileKey] || CANDIDATE_CAMPAIGNS.makinde;
+        const slogans = profile.slogans.map(item => `<li>${item}</li>`).join("");
+        const achievements = profile.achievements.map(group => `
+          <div class="campaign-section">
+            <div class="campaign-section-header"><h3>${group.title}</h3><span>Programme focus</span></div>
+            <div class="achievement-list">
+              ${group.items.map(item => `
+                <details class="achievement-item">
+                  <summary>
+                    <div>
+                      <div class="achievement-name">${item.name}</div>
+                      <div class="achievement-meta">${item.year} · ${item.verified}</div>
+                    </div>
+                    <span class="achievement-status">${item.status}</span>
+                  </summary>
+                  <div class="achievement-body">
+                    <p>${item.description}</p>
+                    <p><a href="${item.source}" target="_blank" rel="noreferrer">Official source</a> · Updated ${item.verified}</p>
+                  </div>
+                </details>
+              `).join("")}
+            </div>
+          </div>
+        `).join("");
+
+        const timeline = profile.timeline.map(item => `
+          <div class="timeline-item">
+            <span>${item.date}</span>
+            <strong>${item.title}</strong>
+            <p>${item.description}</p>
+          </div>
+        `).join("");
+
+        body.innerHTML = `
+          <section class="campaign-hero">
+            <div>
+              <div class="campaign-badge">Campaign Profile</div>
+              <h2 id="campaignTitle">${profile.headline}</h2>
+              <h3>${profile.subheadline}</h3>
+              <div class="campaign-statement">${profile.statement}</div>
+              <p>${profile.intro}</p>
+              <div class="campaign-actions">
+                <a href="#campaign-achievements">Explore Achievements</a>
+                <button type="button" data-campaign-close>Back to profiles</button>
+              </div>
+            </div>
+            <div class="campaign-hero-figure">
+              <img src="${profile.image}" alt="${profile.fullName} campaign portrait" />
+            </div>
+          </section>
+
+          <div class="campaign-grid">
+            <div class="campaign-card">
+              <h4>Campaign message</h4>
+              <p>${profile.record}</p>
+            </div>
+            <div class="campaign-card">
+              <h4>Slogans</h4>
+              <ul class="campaign-slogans">${slogans}</ul>
+            </div>
+          </div>
+
+          <div id="campaign-achievements" class="campaign-section">
+            <div class="campaign-section-header"><h3>Reported achievements</h3><span>Public record overview</span></div>
+            ${achievements}
+          </div>
+
+          <div class="campaign-section">
+            <div class="campaign-section-header"><h3>Profile timeline</h3><span>Historical and future milestones</span></div>
+            <div class="timeline">${timeline}</div>
+          </div>
+        `;
+
+        body.querySelector("[data-campaign-close]").addEventListener("click", close);
+        body.querySelector("a[href='#campaign-achievements']").addEventListener("click", event => {
+          event.preventDefault();
+          document.getElementById("campaign-achievements").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+
+      function open(profileKey = "makinde") {
+        render(profileKey);
+        modal.classList.add("on");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      }
+
+      function close() {
+        modal.classList.remove("on");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+      }
+
+      function init() {
+        render();
+        closeBtn.addEventListener("click", close);
+        modal.addEventListener("click", event => {
+          if (event.target === modal) close();
+        });
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && modal.classList.contains("on")) close();
+        });
+      }
+
+      return { init, open, close };
+    })();
+
+    /* =====================================================================
+       3. TEXTURES — load, downscale, placeholder, nameplates
+       ===================================================================== */
+    const Tex = (() => {
+      const max = () => CONFIG.scene.maxTextureSize;
+      const make = (w, h) => Object.assign(document.createElement("canvas"), { width: w, height: h });
+      function placeholder(p) {
+        const c = make(600, 800), g = c.getContext("2d");
+        const gr = g.createLinearGradient(0, 0, 600, 800); gr.addColorStop(0, "#2b3040"); gr.addColorStop(1, "#12141c");
+        g.fillStyle = gr; g.fillRect(0, 0, 600, 800);
+        g.fillStyle = "#4a5166"; g.beginPath(); g.arc(300, 300, 110, 0, 7); g.fill();
+        g.beginPath(); g.ellipse(300, 680, 210, 230, 0, Math.PI, 0); g.fill();
+        g.fillStyle = "#c9ccd6"; g.font = "600 30px system-ui,sans-serif"; g.textAlign = "center";
+        g.fillText("PHOTO PLACEHOLDER", 300, 770);
+        return c;
+      }
+      function load(p) { // resolves to a canvas ≤ maxTextureSize; never rejects
+        return new Promise(res => {
+          if (!p.image) return res(placeholder(p));
+          const im = new Image(); im.crossOrigin = "anonymous";
+          im.onload = () => {
+            const s = Math.min(1, max() / Math.max(im.naturalWidth, im.naturalHeight));
+            const c = make(Math.max(1, im.naturalWidth * s | 0), Math.max(1, im.naturalHeight * s | 0));
+            c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); res(c);
+          };
+          im.onerror = () => { console.warn("Image failed, using placeholder:", p.image); res(placeholder(p)); };
+          im.src = p.image;
+        });
+      }
+      function nameplate(p) {
+        const c = make(1024, 256), g = c.getContext("2d"), col = CONFIG.colors;
+        g.fillStyle = "#0d0f16"; g.fillRect(0, 0, 1024, 256);
+        g.strokeStyle = col.metal; g.lineWidth = 6; g.strokeRect(8, 8, 1008, 240);
+        g.textAlign = "center"; g.fillStyle = col.text;
+        const fit = (t, size, weight, y, color) => { let s = size; g.fillStyle = color; do { g.font = `${weight} ${s}px Georgia,serif`; s -= 2; } while (g.measureText(t).width > 940 && s > 12); g.fillText(t, 512, y); };
+        fit(p.name, 84, 700, 104, col.text); fit(p.title, 46, 400, 160, col.muted); fit(p.label.toUpperCase(), 36, 600, 214, col.accent);
+        return c;
+      }
+      return { load, nameplate };
+    })();
+
+    /* =====================================================================
+       4. SCENE MODULE — Three.js
+       ===================================================================== */
+    const Scene3D = (() => {
+      let rim, hoverLight, hoverIdx = -1, paused = false, lastHover = 0, rc, ray = { x: 0, y: 0 }, onSelect = () => { }, pal = [], CF = { n: 700, mesh: null, d: [], next: 0 }, dum, metalMat, renderer, scene, camera, panels = [], beams = [], particles, raf = 0, running = false,
+        clock, pointer = { x: 0, y: 0 }, cam = { x: 0, y: 0 }, intro = 0, disposables = [], canvas, w = 1, h = 1;
+      const col = c => new THREE.Color(c);
+      const track = o => (disposables.push(o), o);
+      const ease = t => 1 - Math.pow(1 - t, 3);
+      const getMetal = () => metalMat || (metalMat = track(new THREE.MeshStandardMaterial({ color: col(CONFIG.colors.metal), metalness: 1, roughness: 0.27 })));
+
+      function supported() {
+        try { const c = document.createElement("canvas"); return !!(window.THREE && (c.getContext("webgl2") || c.getContext("webgl"))); }
+        catch (e) { return false; }
+      }
+
+      async function init(cv) {
+        canvas = cv;
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+        renderer.setClearColor(col(CONFIG.colors.background));
+        renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+        canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); stop(); document.documentElement.classList.add("no-webgl"); });
+
+        scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(col(CONFIG.colors.background), 0.035);
+        camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+        clock = new THREE.Clock();
+
+        buildStage(); buildLights(); buildBeams(); buildParticles(); buildConfetti();
+        await buildPanels();
+
+        resize(); addEventListener("resize", resize);
+        addEventListener("pointermove", onPointer, { passive: true });
+        rc = new THREE.Raycaster();
+        canvas.addEventListener("pointermove", onCanvasMove); canvas.addEventListener("pointerdown", onCanvasDown); canvas.addEventListener("pointerleave", () => setHover(-1));
+        document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
+        UI.onMotionChange(() => { stop(); start(); });
+        addEventListener("pagehide", dispose);
+        start();
+      }
+
+      function buildStage() {
+        const metal = getMetal();
+        const dark = track(new THREE.MeshStandardMaterial({ color: col(CONFIG.colors.stage), metalness: 0.5, roughness: 0.45 }));
+        const gm = (g) => track(g);
+        const floor = new THREE.Mesh(gm(new THREE.BoxGeometry(14, 0.4, 6)), dark); floor.position.set(0, -2.4, 0); floor.receiveShadow = true; scene.add(floor);
+        const trim = new THREE.Mesh(gm(new THREE.BoxGeometry(14.3, 0.1, 6.3)), metal); trim.position.set(0, -2.17, 0); trim.receiveShadow = true; scene.add(trim);
+        const wall = new THREE.Mesh(gm(new THREE.PlaneGeometry(26, 12)), track(new THREE.MeshStandardMaterial({ color: 0x10131c, roughness: 0.9 })));
+        wall.position.set(0, 2, -3.2); wall.receiveShadow = true; scene.add(wall);
+        [-1, 1].forEach(s => { // layered side columns for depth
+          const col1 = new THREE.Mesh(gm(new THREE.BoxGeometry(0.35, 7, 0.6)), metal); col1.position.set(s * 6.9, 1, -2.4); col1.castShadow = true; scene.add(col1);
+        });
+      }
+
+      function buildLights() {
+        scene.add(new THREE.HemisphereLight(0x9fb4ff, 0x1a1208, 0.35));
+        const key = new THREE.SpotLight(0xfff0d0, 1.6, 40, 0.5, 0.6, 1); key.position.set(0, 9, 8); key.target.position.set(0, 0, 0);
+        key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -0.0005; scene.add(key, key.target);
+        rim = new THREE.PointLight(col(CONFIG.colors.accent), 0.9, 20); rim.position.set(0, 4, -2.5); scene.add(rim);
+        hoverLight = new THREE.PointLight(0xffffff, 0, 14); scene.add(hoverLight);
+      }
+
+      function buildBeams() {
+        const geo = track(new THREE.ConeGeometry(1.1, 10, 24, 1, true));
+        [-4.2, 0, 4.2].forEach((x, i) => {
+          const m = track(new THREE.MeshBasicMaterial({ color: col(CONFIG.colors.beam), transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+          const b = new THREE.Mesh(geo, m); b.position.set(x, 3.2, -0.8); b.userData = { base: 0.07, phase: i * 2 }; scene.add(b); beams.push(b);
+        });
+      }
+
+      function buildParticles() {
+        const n = CONFIG.scene.particleCount, pos = new Float32Array(n * 3), seed = new Float32Array(n);
+        for (let i = 0; i < n; i++) { pos.set([(Math.random() - .5) * 16, Math.random() * 8 - 2, (Math.random() - .5) * 7], i * 3); seed[i] = Math.random() * 6.28; }
+        const g = track(new THREE.BufferGeometry()); g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        const m = track(new THREE.PointsMaterial({ color: col(CONFIG.colors.beam), size: 0.045, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending }));
+        particles = new THREE.Points(g, m); particles.userData = { seed, base: pos.slice() }; scene.add(particles);
+      }
+
+      async function buildPanels() {
+        const metal = getMetal();
+        const back = track(new THREE.MeshStandardMaterial({ color: 0x0b0c12, roughness: 0.8 }));
+        const frameGeo = track(new THREE.BoxGeometry(3.3, 4.3, 0.22)), backGeo = track(new THREE.BoxGeometry(3.05, 4.05, 0.12));
+        const imgGeo = track(new THREE.PlaneGeometry(2.8, 3.73)), plateGeo = track(new THREE.PlaneGeometry(3.1, 0.775));
+        const canv = await Promise.all(CONFIG.portraits.map(Tex.load));
+        CONFIG.portraits.forEach((p, i) => {
+          const grp = new THREE.Group(), x = (i - 1) * 4.2;
+          const frame = new THREE.Mesh(frameGeo, metal); frame.castShadow = frame.receiveShadow = true;
+          const bk = new THREE.Mesh(backGeo, back); bk.position.z = 0.09; bk.receiveShadow = true;
+          const t = track(new THREE.CanvasTexture(canv[i])); t.encoding = THREE.sRGBEncoding;
+          t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); t.generateMipmaps = true;
+          const img = new THREE.Mesh(imgGeo, track(new THREE.MeshStandardMaterial({ map: t, roughness: 0.55, metalness: 0.05 }))); img.position.set(0, 0.07, 0.17);
+          const pt = track(new THREE.CanvasTexture(Tex.nameplate(p))); pt.encoding = THREE.sRGBEncoding;
+          const plate = new THREE.Mesh(plateGeo, track(new THREE.MeshStandardMaterial({ map: pt, roughness: 0.4, metalness: 0.3 }))); plate.position.set(0, -2.7, 0.2);
+          grp.add(frame, bk, img, plate); grp.position.set(x, 0.3, 0); grp.userData = { x, i, focus: 0, plate: pt };
+          grp.position.y = -6; scene.add(grp); panels.push(grp);
+        });
+      }
+
+      function buildConfetti() {
+        dum = new THREE.Object3D(); pal = CONFIG.themes[0].confetti.map(col);
+        const m = track(new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+        CF.mesh = track(new THREE.InstancedMesh(track(new THREE.PlaneGeometry(0.1, 0.16)), m, CF.n)); CF.mesh.frustumCulled = false;
+        dum.scale.setScalar(0); dum.updateMatrix();
+        for (let i = 0; i < CF.n; i++) { CF.mesh.setMatrixAt(i, dum.matrix); CF.mesh.setColorAt(i, pal[0]); CF.d.push({ life: 0, on: false }); }
+        scene.add(CF.mesh);
+      }
+      function burst(i, count) {
+        if (UI.reduced() || !CF.mesh) return;
+        const p = panels[i], R = Math.random;
+        for (let k = 0; k < count; k++) {
+          const s = CF.next++ % CF.n, c = CF.d[s];
+          Object.assign(c, {
+            x: p.position.x + (R() - .5) * 3, y: p.position.y + 2.3 + R() * .4, z: 0.4 + R() * .8,
+            vx: (R() - .5) * 4.5, vy: 2 + R() * 4.5, vz: (R() - .3) * 2, rx: R() * 6, rz: R() * 6, sx: (R() - .5) * 16, sz: (R() - .5) * 16, life: 2.4 + R() * 1.6
+          });
+          CF.mesh.setColorAt(s, pal[(R() * pal.length) | 0]);
+        }
+        CF.mesh.instanceColor.needsUpdate = true;
+      }
+      function updateConfetti(dt) {
+        if (!CF.mesh) return; let any = false;
+        for (let i = 0; i < CF.n; i++) {
+          const c = CF.d[i];
+          if (c.life <= 0) { if (c.on) { dum.position.set(0, 0, 0); dum.scale.setScalar(0); dum.updateMatrix(); CF.mesh.setMatrixAt(i, dum.matrix); c.on = false; any = true; } continue; }
+          c.life -= dt; c.vy = Math.max(-3, c.vy - 6 * dt); c.vx *= 1 - .6 * dt; c.vz *= 1 - .6 * dt;
+          c.x += c.vx * dt; c.y += c.vy * dt; c.z += c.vz * dt; c.rx += c.sx * dt; c.rz += c.sz * dt;
+          if (c.y < -2.15) c.life = Math.min(c.life, .4);
+          c.on = any = true; const s = Math.min(1, c.life / .5);
+          dum.position.set(c.x, c.y, c.z); dum.rotation.set(c.rx, 0, c.rz);
+          dum.scale.set(s, s * (0.4 + 0.6 * Math.abs(Math.cos(c.rx))), s); dum.updateMatrix(); CF.mesh.setMatrixAt(i, dum.matrix);
+        }
+        if (any) CF.mesh.instanceMatrix.needsUpdate = true;
+      }
+      function setRay(e) { const r = canvas.getBoundingClientRect(); ray.x = ((e.clientX - r.left) / r.width) * 2 - 1; ray.y = -((e.clientY - r.top) / r.height) * 2 + 1; }
+      function pick() {
+        rc.setFromCamera(ray, camera); const hits = rc.intersectObjects(panels, true); if (!hits.length) return -1;
+        let o = hits[0].object; while (o && o.userData.i === undefined) o = o.parent; return o ? o.userData.i : -1;
+      }
+      function setHover(i) {
+        if (i === hoverIdx) return; hoverIdx = i;
+        if (i >= 0) { const n = performance.now(); if (n - lastHover > CONFIG.confetti.hoverCooldownMs) { lastHover = n; burst(i, CONFIG.confetti.piecesPerHover); } }
+        if (!running) frame(0, true);
+      }
+      function onCanvasMove(e) { if (e.pointerType !== "mouse") return; setRay(e); const i = pick(); canvas.style.cursor = i >= 0 ? "pointer" : "default"; setHover(i); }
+      function onCanvasDown(e) { setRay(e); const i = pick(); if (i >= 0) select(i); }
+      function select(i) { burst(i, CONFIG.confetti.piecesPerClick); onSelect(i); }
+      function celebrate() { panels.forEach((_, i) => setTimeout(() => burst(i, CONFIG.confetti.piecesPerClick), i * 180)); }
+      function setTheme(th) {
+        pal = th.confetti.map(col); getMetal().color.set(th.metal); rim.color.set(th.accent);
+        beams.forEach(b => b.material.color.set(th.beam)); particles.material.color.set(th.beam);
+        panels.forEach(p => { p.userData.plate.image = Tex.nameplate(CONFIG.portraits[p.userData.i]); p.userData.plate.needsUpdate = true; });
+        if (!running) frame(0, true);
+      }
+
+      function resize() {
+        const el = canvas.parentElement; w = Math.max(1, el.clientWidth); h = Math.max(1, el.clientHeight);
+        const small = w < 700;
+        renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small ? 1.5 : CONFIG.scene.maxPixelRatio));
+        renderer.setSize(w, h, false); camera.aspect = w / h;
+        const halfW = 7.4, fov = camera.fov * Math.PI / 180;
+        camera.userData.z = Math.max(10, halfW / (Math.tan(fov / 2) * camera.aspect), 6.2 / Math.tan(fov / 2) / 1.0 * 0.5);
+        camera.updateProjectionMatrix(); frame(0, true);
+      }
+      function onPointer(e) { pointer.x = (e.clientX / innerWidth - .5) * 2; pointer.y = (e.clientY / innerHeight - .5) * 2; }
+
+      function frame(dt, force) {
+        const t = clock.elapsedTime, reduce = UI.reduced();
+        intro = reduce ? 1 : Math.min(1, intro + dt / 1.8);
+        const focusIdx = hoverIdx >= 0 ? hoverIdx : (reduce || paused ? -1 : Math.floor(t / CONFIG.scene.focusCycleSeconds) % panels.length);
+        panels.forEach((p, i) => {
+          const e = ease(Math.min(1, Math.max(0, intro * 1.6 - i * 0.2)));
+          p.userData.focus += ((i === focusIdx ? 1 : 0) - p.userData.focus) * Math.min(1, dt * 3);
+          const f = p.userData.focus;
+          p.position.y = THREE.MathUtils.lerp(-6, 0.3, e) + (reduce ? 0 : Math.sin(t * .8 + i) * .05);
+          p.position.z = f * 0.7; p.scale.setScalar(1 + f * 0.05);
+          p.rotation.x += ((hoverIdx === i && !reduce ? -ray.y * 0.08 : 0) - p.rotation.x) * Math.min(1, dt * 8);
+          p.rotation.y = reduce ? 0 : Math.sin(t * .4 + i) * .04 + (pointer.x * -0.05);
+        });
+        const hp = hoverIdx >= 0 ? panels[hoverIdx] : null;
+        if (hp) hoverLight.position.set(hp.position.x, hp.position.y + 0.5, 3.5);
+        hoverLight.intensity += ((hp ? 1.8 : 0) - hoverLight.intensity) * Math.min(1, dt * 6);
+        updateConfetti(dt);
+        beams.forEach((b, i) => { b.material.opacity = reduce ? b.userData.base : b.userData.base * (0.7 + 0.5 * Math.sin(t * 1.1 + b.userData.phase)) + (panels[i] ? panels[i].userData.focus * 0.06 : 0); b.rotation.z = reduce ? 0 : Math.sin(t * .5 + b.userData.phase) * .05; });
+        if (!reduce) {
+          const pa = particles.geometry.attributes.position, b0 = particles.userData.base, sd = particles.userData.seed;
+          for (let i = 0; i < sd.length; i++) {
+            pa.array[i * 3] = b0[i * 3] + Math.sin(t * .3 + sd[i]) * .3;
+            pa.array[i * 3 + 1] = ((b0[i * 3 + 1] + 2 + t * .15 * (0.4 + sd[i] % 1)) % 8) - 2;
+          } pa.needsUpdate = true;
+        }
+        const par = reduce ? 0 : CONFIG.scene.parallax, z = camera.userData.z;
+        cam.x += (pointer.x * par - cam.x) * Math.min(1, dt * 2); cam.y += (-pointer.y * par * .5 - cam.y) * Math.min(1, dt * 2);
+        const sway = reduce || paused ? 0 : Math.sin(t * .25) * .5;
+        camera.position.set(cam.x + sway, 1.4 + cam.y, z); camera.lookAt(0, 0.4, 0);
+        renderer.render(scene, camera);
+      }
+
+      function loop() { if (!running) return; raf = requestAnimationFrame(loop); frame(Math.min(clock.getDelta(), 0.05)); }
+      function start() {
+        if (running) return; clock.getDelta();
+        if (UI.reduced()) { frame(0, true); return; } // static render only
+        running = true; loop();
+      }
+      function stop() { running = false; cancelAnimationFrame(raf); }
+      function dispose() {
+        stop(); removeEventListener("resize", resize); removeEventListener("pointermove", onPointer); if (CF.mesh) CF.mesh.dispose();
+        disposables.forEach(d => d.dispose && d.dispose()); scene && scene.traverse(o => { if (o.material && o.material.dispose) o.material.dispose(); });
+        renderer && renderer.dispose();
+      }
+      return { supported, init, dispose, select, celebrate, setTheme, hover: setHover, setPaused: v => { paused = v; }, setOnSelect: f => { onSelect = f; } };
+    })();
+
+    /* =====================================================================
+       5. BOOT
+       ===================================================================== */
+    (async function boot() {
+      UI.init();
+      const root = document.documentElement, $ = id => document.getElementById(id);
+      let webgl = false, themeIdx = 0;
+      CampaignExperience.init();
+      if (Scene3D.supported()) {
+        try {
+          await Scene3D.init($("stage")); Scene3D.setOnSelect((idx) => {
+            UI.showDetail(idx);
+            CampaignExperience.open(CONFIG.portraits[idx].id);
+          }); webgl = true;
+        }
+        catch (err) { console.error("3D init failed, using fallback:", err); Scene3D.dispose(); }
+      }
+      if (!webgl) root.classList.add("no-webgl");
+
+      // Keyboard-accessible profile buttons (focus = hover, Enter = click)
+      CONFIG.portraits.forEach((p, i) => {
+        const b = document.createElement("button"); b.className = "sr"; b.textContent = "View profile: " + p.name;
+        b.onclick = () => {
+          if (webgl) Scene3D.select(i);
+          else UI.showDetail(i);
+          CampaignExperience.open(p.id);
+        };
+        b.onfocus = () => webgl && Scene3D.hover(i); b.onblur = () => webgl && Scene3D.hover(-1);
+        $("hits").appendChild(b);
+      });
+
+      const celebrate = () => webgl ? Scene3D.celebrate() : document.querySelectorAll(".card").forEach(c => UI.domConfetti(c, 30));
+      const setTheme = n => {
+        themeIdx = n % CONFIG.themes.length; const th = CONFIG.themes[themeIdx];
+        Object.assign(CONFIG.colors, { metal: th.metal, accent: th.accent, beam: th.beam });
+        UI.applyTheme(); if (webgl) Scene3D.setTheme(th); $("bTheme").textContent = "🎨 " + th.name;
+      };
+      const openCourtesy = () => CampaignExperience.open("courtesy");
+      const fullscreen = () => document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen && root.requestFullscreen();
+      $("bCel").onclick = celebrate; $("bTheme").onclick = () => setTheme(themeIdx + 1);
+      $("bPause").onclick = openCourtesy; $("bFs").onclick = fullscreen;
+      if (!document.fullscreenEnabled) $("bFs").hidden = true;
+      addEventListener("keydown", e => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return; const k = e.key.toLowerCase();
+        if (k === "c") celebrate(); else if (k === "t") setTheme(themeIdx + 1);
+        else if (k === "f") fullscreen(); else if (k === "escape") UI.hideDetail();
+        else if (/^[1-9]$/.test(k) && CONFIG.portraits[k - 1]) webgl ? Scene3D.select(k - 1) : UI.showDetail(k - 1);
+      });
+    })();
+  </script>
+</body>
+
+</html>
