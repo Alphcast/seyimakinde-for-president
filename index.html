@@ -962,8 +962,7 @@
         <p id="dNote"></p>
       </aside>
       <div class="controls" role="toolbar" aria-label="Display controls"><button
-          id="bPause" aria-label="Open courtesy profile" type="button">🤝 Courtesy</button><button id="bFs">⛶
-          Fullscreen</button></div>
+          id="bPause" aria-label="Open courtesy profile" type="button">🤝 Courtesy</button></div>
       <p id="likeStatus" class="like-status" role="status" aria-live="polite"></p>
     </main>
     <div class="ticker" aria-label="Information ticker">
@@ -1730,12 +1729,10 @@
       });
 
       const openCourtesy = () => CampaignExperience.open("courtesy");
-      const fullscreen = () => document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen && root.requestFullscreen();
-      $("bPause").onclick = openCourtesy; $("bFs").onclick = fullscreen;
-      if (!document.fullscreenEnabled) $("bFs").hidden = true;
+      $("bPause").onclick = openCourtesy;
       addEventListener("keydown", e => {
         if (e.ctrlKey || e.metaKey || e.altKey) return; const k = e.key.toLowerCase();
-        if (k === "f") fullscreen(); else if (k === "escape") UI.hideDetail();
+        if (k === "escape") UI.hideDetail();
         else if (/^[1-9]$/.test(k) && CONFIG.portraits[k - 1]) CampaignExperience.open(CONFIG.portraits[k - 1].id);
       });
     })();
