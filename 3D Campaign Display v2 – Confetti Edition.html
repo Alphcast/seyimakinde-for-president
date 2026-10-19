@@ -8,11 +8,11 @@
   <style>
     /* ===== Tokens ===== */
     :root {
-      --bg: #07090f;
-      --ink: #f5f1e6;
-      --muted: #b9b3a3;
-      --accent: #d4af37;
-      --bar: rgba(7, 9, 15, .82);
+      --bg: #f4f7fb;
+      --ink: #172033;
+      --muted: #596579;
+      --accent: #b58a17;
+      --bar: rgba(255, 255, 255, .96);
       box-sizing: border-box;
       padding-top: env(safe-area-inset-top, 0px);
       padding-bottom: env(safe-area-inset-bottom, 0px)
@@ -74,7 +74,7 @@
       border-radius: 14px;
       border: 2px solid rgba(212, 175, 55, .7);
       background: rgba(255, 255, 255, .04);
-      box-shadow: 0 8px 26px rgba(0, 0, 0, .35)
+      box-shadow: 0 5px 16px rgba(20, 35, 60, .14)
     }
 
     h1 {
@@ -83,7 +83,8 @@
       letter-spacing: .06em;
       text-transform: uppercase;
       line-height: 1.1;
-      text-shadow: 0 2px 14px #000
+      color: #172033;
+      text-shadow: none
     }
 
     h1 .w {
@@ -129,9 +130,9 @@
 
     .clock {
       font: 600 clamp(1rem, 2.6vw, 1.8rem) ui-monospace, Menlo, Consolas, monospace;
-      color: var(--accent);
-      background: var(--bar);
-      border: 1px solid rgba(212, 175, 55, .45);
+      color: #765400;
+      background: #fff;
+      border: 1px solid rgba(181, 138, 23, .5);
       border-radius: 8px;
       padding: .35em .7em;
       text-align: right;
@@ -147,7 +148,8 @@
 
     main {
       position: relative;
-      min-height: 0
+      min-height: 0;
+      background: #f4f7fb
     }
 
     #stage,
@@ -164,51 +166,101 @@
     }
 
     #fallback {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: clamp(8px, 2vw, 28px);
-      padding: 16px;
-      flex-wrap: wrap;
-      overflow: auto
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: stretch;
+      gap: clamp(8px, 1.2vw, 16px);
+      padding: 58px clamp(10px, 2vw, 24px) 12px;
+      overflow: auto;
+      background: #f4f7fb
     }
 
+    .gallery-view #stage,
     .no-webgl #stage {
       display: none
     }
 
+    .gallery-view #fallback,
     .no-webgl #fallback {
-      display: flex
+      display: grid
     }
 
     .card {
-      width: min(30%, 240px);
-      min-width: 130px;
-      background: linear-gradient(160deg, #2a2a2e, #111);
-      border: 3px solid var(--accent);
-      border-radius: 6px;
+      width: 100%;
+      min-width: 0;
+      align-self: start;
+      background: #fff;
+      border: 1px solid #dce3ed;
+      border-radius: 14px;
       padding: 8px;
-      text-align: center
+      text-align: center;
+      box-shadow: 0 5px 18px rgba(20, 35, 60, .12);
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease
     }
 
     .card .ph {
-      aspect-ratio: 3/4;
-      background: #1b1d26 center/cover;
+      position: relative;
+      height: min(34vh, 420px);
+      overflow: hidden;
+      border-radius: 9px;
+      background: #e7edf5;
       display: grid;
       place-items: center;
-      color: var(--muted);
-      font: 12px system-ui
+      color: #596579;
+      font: 12px system-ui, sans-serif
+    }
+
+    .card .ph img {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    .card .ph:not(.loaded) img {
+      display: none
+    }
+
+    .card .ph.loaded span {
+      display: none
     }
 
     .card h2 {
-      font-size: 1rem;
-      margin: .6em 0 .1em
+      color: #172033;
+      font: 700 clamp(.85rem, 1.35vw, 1.1rem)/1.25 system-ui, sans-serif;
+      margin: .65em .1em .25em
     }
 
     .card p {
-      margin: 0;
-      color: var(--muted);
-      font: .8rem system-ui
+      margin: 0 0 .55em;
+      color: #596579;
+      font: .78rem/1.4 system-ui, sans-serif
+    }
+
+    .portrait-like {
+      min-height: 38px;
+      padding: 6px 14px;
+      border: 1px solid #d7dfeb;
+      border-radius: 999px;
+      background: #f7f9fc;
+      color: #38445a;
+      font: 700 .82rem system-ui, sans-serif;
+      cursor: pointer
+    }
+
+    .portrait-like:hover,
+    .portrait-like:focus-visible {
+      border-color: #cc5264;
+      outline: 2px solid rgba(204, 82, 100, .18)
+    }
+
+    .portrait-like[aria-pressed="true"] {
+      border-color: #c4495c;
+      background: #fff0f2;
+      color: #a3223a
     }
 
     .live-note {
@@ -224,7 +276,7 @@
       justify-content: center;
       padding: 24px 16px;
       z-index: 120;
-      background: rgba(5, 8, 12, .72);
+      background: rgba(24, 35, 52, .38);
       backdrop-filter: blur(10px);
       opacity: 0;
       visibility: hidden;
@@ -241,19 +293,20 @@
       width: min(1080px, 100%);
       max-height: 92vh;
       overflow: auto;
-      background: linear-gradient(180deg, #08110d, #0d1716 25%, #111a1b 100%);
-      border: 1px solid rgba(84, 190, 132, .5);
+      background: linear-gradient(180deg, #fff, #f7f9fc);
+      border: 1px solid #dce3ed;
       border-radius: 24px;
-      box-shadow: 0 30px 80px rgba(0, 0, 0, .5)
+      box-shadow: 0 24px 64px rgba(20, 35, 60, .25);
+      color: #172033
     }
 
     .campaign-close {
       position: absolute;
       top: 16px;
       right: 16px;
-      border: 1px solid rgba(255, 255, 255, .18);
-      background: rgba(11, 16, 15, .7);
-      color: var(--ink);
+      border: 1px solid #d3dce8;
+      background: #fff;
+      color: #172033;
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -265,8 +318,8 @@
     .campaign-close:hover,
     .campaign-close:focus-visible {
       outline: none;
-      background: #0d2e1d;
-      border-color: rgba(143, 220, 173, .8)
+      background: #eef4fb;
+      border-color: #b58a17
     }
 
     .campaign-body {
@@ -288,8 +341,8 @@
       padding: 7px 12px;
       border: 1px solid rgba(143, 220, 173, .5);
       border-radius: 999px;
-      background: rgba(17, 52, 36, .7);
-      color: #dff9e9;
+      background: #edf7ef;
+      color: #1f6337;
       font: 700 .72rem system-ui, sans-serif;
       letter-spacing: .14em;
       text-transform: uppercase
@@ -304,7 +357,7 @@
 
     .campaign-hero h3 {
       margin: 0 0 12px;
-      color: #d9f7e6;
+      color: #315843;
       font-size: clamp(1.1rem, 2.2vw, 1.6rem);
       letter-spacing: .12em;
       text-transform: uppercase
@@ -312,7 +365,7 @@
 
     .campaign-hero p {
       margin: 0;
-      color: #d3dfe2;
+      color: #4d5a6d;
       max-width: 58ch;
       line-height: 1.7;
       font-size: 1.02rem
@@ -330,17 +383,17 @@
       aspect-ratio: 4 / 5;
       object-fit: cover;
       border-radius: 18px;
-      border: 2px solid rgba(143, 220, 173, .5);
-      box-shadow: 0 18px 40px rgba(0, 0, 0, .35)
+      border: 2px solid rgba(181, 138, 23, .55);
+      box-shadow: 0 12px 28px rgba(20, 35, 60, .16)
     }
 
     .campaign-statement {
       margin: 18px 0 18px;
       padding: 16px 18px;
       border-left: 4px solid #a8e6b3;
-      background: rgba(24, 38, 31, .65);
+      background: #f1f6f2;
       border-radius: 12px;
-      color: #f0fff3;
+      color: #243b2c;
       font-size: 1.05rem
     }
 
@@ -352,15 +405,49 @@
     }
 
     .campaign-card {
-      background: rgba(13, 21, 19, .68);
-      border: 1px solid rgba(143, 220, 173, .15);
+      background: #fff;
+      border: 1px solid #dce3ed;
       border-radius: 18px;
       padding: 20px
     }
 
+    .campaign-message h3 {
+      margin: 22px 0 8px;
+      color: #1f3555;
+      font-size: 1.35rem;
+      line-height: 1.3
+    }
+
+    .campaign-message h4 {
+      margin: 12px 0 8px;
+      color: #25533a;
+      font-size: 1.05rem
+    }
+
+    .campaign-message p {
+      margin: 0 0 12px;
+      color: #3e4a5c;
+      line-height: 1.75
+    }
+
+    .campaign-message .message-role {
+      font-weight: 700;
+      color: #315843
+    }
+
+    .campaign-message .message-subtitle {
+      color: #596579;
+      font-style: italic
+    }
+
+    .campaign-message .message-signoff {
+      font-weight: 700;
+      color: #765400
+    }
+
     .campaign-card h4 {
       margin: 0 0 10px;
-      color: #dff9e9;
+      color: #25533a;
       font-size: 1rem;
       letter-spacing: .12em;
       text-transform: uppercase
@@ -371,7 +458,7 @@
       padding-left: 1.1rem;
       display: grid;
       gap: 8px;
-      color: #dfe9e7;
+      color: #3e4a5c;
       line-height: 1.6
     }
 
@@ -387,9 +474,9 @@
     .campaign-slogans li {
       padding: 9px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(201, 216, 218, .18);
-      background: rgba(18, 31, 28, .8);
-      color: #ebf9ef;
+      border: 1px solid #dce3ed;
+      background: #f3f6fa;
+      color: #314056;
       font: 600 .8rem system-ui, sans-serif
     }
 
@@ -408,7 +495,7 @@
       min-height: 44px;
       padding: 0 18px;
       border-radius: 999px;
-      border: 1px solid rgba(143, 220, 173, .7);
+      border: 1px solid rgba(181, 138, 23, .7);
       font: 700 .9rem system-ui, sans-serif;
       text-decoration: none;
       cursor: pointer;
@@ -421,8 +508,8 @@
     }
 
     .campaign-actions button {
-      background: rgba(16, 26, 23, .8);
-      color: #edf9f0
+      background: #f4f7fb;
+      color: #253248
     }
 
     .campaign-actions a:hover,
@@ -472,7 +559,7 @@
       align-items: baseline;
       gap: 12px;
       margin-bottom: 14px;
-      border-bottom: 1px solid rgba(143, 220, 173, .18);
+      border-bottom: 1px solid #dce3ed;
       padding-bottom: 10px
     }
 
@@ -482,7 +569,7 @@
     }
 
     .campaign-section-header span {
-      color: #bfdbd4;
+      color: #596579;
       font-size: .8rem;
       letter-spacing: .12em;
       text-transform: uppercase
@@ -495,9 +582,9 @@
     }
 
     .achievement-item {
-      border: 1px solid rgba(143, 220, 173, .22);
+      border: 1px solid #dce3ed;
       border-radius: 16px;
-      background: rgba(14, 22, 20, .7);
+      background: #fff;
       overflow: hidden
     }
 
@@ -516,35 +603,35 @@
     }
 
     .achievement-item[open] summary {
-      border-bottom: 1px solid rgba(143, 220, 173, .18)
+      border-bottom: 1px solid #dce3ed
     }
 
     .achievement-name {
       font-weight: 700;
-      color: #edf9f0
+      color: #253248
     }
 
     .achievement-status {
       display: inline-flex;
       padding: 5px 9px;
       border-radius: 999px;
-      background: rgba(143, 220, 173, .12);
-      border: 1px solid rgba(143, 220, 173, .3);
+      background: #edf7ef;
+      border: 1px solid #bdddc7;
       font: 700 .72rem system-ui, sans-serif;
-      color: #dff9e9;
+      color: #25533a;
       text-transform: uppercase;
       letter-spacing: .08em
     }
 
     .achievement-meta {
       margin-top: 4px;
-      color: #bfd7d2;
+      color: #667287;
       font-size: .82rem
     }
 
     .achievement-body {
       padding: 16px 18px 18px;
-      color: #dbe8e5;
+      color: #465368;
       line-height: 1.7
     }
 
@@ -553,14 +640,14 @@
     }
 
     .achievement-body a {
-      color: #b4f3c9
+      color: #17643b
     }
 
     .timeline {
       position: relative;
       margin: 18px 0 0;
       padding-left: 18px;
-      border-left: 2px solid rgba(143, 220, 173, .3)
+      border-left: 2px solid #c7d7ce
     }
 
     .timeline-item {
@@ -576,21 +663,21 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      background: #a8e6b3;
-      border: 2px solid #0e1f18;
-      box-shadow: 0 0 0 3px rgba(168, 230, 179, .24)
+      background: #72b985;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 3px rgba(114, 185, 133, .2)
     }
 
     .timeline-item strong {
       display: block;
-      color: #edf9f0;
+      color: #253248;
       font-size: 1.02rem;
       margin-bottom: 4px
     }
 
     .timeline-item span {
       display: block;
-      color: #a8d4cb;
+      color: #667287;
       font-size: .78rem;
       letter-spacing: .12em;
       text-transform: uppercase;
@@ -599,7 +686,7 @@
 
     .timeline-item p {
       margin: 0;
-      color: #dfe9e7;
+      color: #465368;
       line-height: 1.6
     }
 
@@ -672,7 +759,8 @@
       }
 
       .controls {
-        bottom: 6px;
+        top: 6px;
+        bottom: auto;
         width: calc(100% - 16px);
         max-width: 430px
       }
@@ -747,7 +835,7 @@
       position: relative;
       z-index: 3;
       overflow: hidden;
-      background: var(--bar);
+      background: #fff;
       border-top: 2px solid var(--accent);
       font: 600 clamp(.8rem, 1.8vw, 1.05rem) system-ui, sans-serif;
       letter-spacing: .06em;
@@ -813,7 +901,8 @@
     .controls {
       position: absolute;
       left: 50%;
-      bottom: 10px;
+      top: 8px;
+      bottom: auto;
       transform: translateX(-50%);
       z-index: 4;
       display: flex;
@@ -825,8 +914,8 @@
 
     .controls button {
       font: 600 clamp(.7rem, 1.7vw, .85rem) system-ui, sans-serif;
-      color: var(--ink);
-      background: var(--bar);
+      color: #253248;
+      background: rgba(255, 255, 255, .96);
       border: 1px solid var(--accent);
       border-radius: 999px;
       padding: .55em 1em;
@@ -837,8 +926,8 @@
 
     .controls button:hover,
     .controls button:focus-visible {
-      background: var(--accent);
-      color: #000;
+      background: #f5e8bd;
+      color: #332500;
       outline: none
     }
 
@@ -874,13 +963,13 @@
       opacity: 0;
       pointer-events: none;
       width: min(92%, 420px);
-      background: rgba(10, 12, 18, .92);
+      background: rgba(255, 255, 255, .98);
       border: 2px solid var(--accent);
       border-radius: 12px;
       padding: 16px 20px;
       text-align: center;
       transition: opacity .35s, transform .35s;
-      box-shadow: 0 12px 40px #000a
+      box-shadow: 0 10px 30px rgba(20, 35, 60, .2)
     }
 
     #detail.on {
@@ -902,7 +991,7 @@
     }
 
     #detail .lab {
-      color: var(--accent);
+      color: #765400;
       letter-spacing: .14em;
       text-transform: uppercase;
       font-weight: 700
@@ -914,7 +1003,7 @@
       right: 8px;
       background: none;
       border: 0;
-      color: var(--ink);
+      color: #253248;
       font-size: 1.6rem;
       cursor: pointer;
       min-width: 40px;
@@ -932,8 +1021,9 @@
 
     .card:hover,
     .card:focus-visible {
-      transform: translateY(-6px) scale(1.03);
-      outline: none
+      transform: translateY(-3px);
+      outline: none;
+      box-shadow: 0 10px 24px rgba(20, 35, 60, .18)
     }
 
     .cf {
@@ -955,10 +1045,25 @@
         text-align: left
       }
     }
+
+    .like-status {
+      position: absolute;
+      left: -9999px
+    }
+
+    @media (max-width:760px) {
+      #fallback {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+      }
+
+      .card .ph {
+        height: min(30vh, 320px)
+      }
+    }
   </style>
 </head>
 
-<body>
+<body class="gallery-view">
   <div class="app" id="app">
     <header>
       <div class="brand-wrap">
@@ -980,10 +1085,10 @@
         <p class="lab" id="dLabel"></p>
         <p id="dNote"></p>
       </aside>
-      <div class="controls" role="toolbar" aria-label="Display controls"><button id="bCel">🎉 Celebrate</button><button
-          id="bPause" aria-label="Open courtesy profile" type="button">🤝 Courtesy</button><button id="bTheme">🎨
-          Gold</button><button id="bFs">⛶
+      <div class="controls" role="toolbar" aria-label="Display controls"><button
+          id="bPause" aria-label="Open courtesy profile" type="button">🤝 Courtesy</button><button id="bFs">⛶
           Fullscreen</button></div>
+      <p id="likeStatus" class="like-status" role="status" aria-live="polite"></p>
     </main>
     <div class="ticker" aria-label="Information ticker">
       <div class="track" id="track"></div>
@@ -997,7 +1102,6 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     /* =====================================================================
        1. CONFIGURATION — edit ONLY this section to change content.
@@ -1023,8 +1127,8 @@
       ],
       tickerSecondsPerLoop: 40,
       colors: {
-        background: "#07090f", stage: "#14161f", metal: "#d4af37", accent: "#d4af37",
-        beam: "#ffe3a3", text: "#f5f1e6", muted: "#b9b3a3"
+        background: "#f4f7fb", stage: "#e4eaf2", metal: "#b58a17", accent: "#b58a17",
+        beam: "#e3c66d", text: "#172033", muted: "#596579"
       },
       clock: { hour12: false, showDate: true },
       scene: {
@@ -1032,11 +1136,7 @@
         focusCycleSeconds: 4.5, parallax: 0.6
       },
       confetti: { piecesPerHover: 45, piecesPerClick: 220, hoverCooldownMs: 700 },
-      themes: [   // press T or the Theme button to cycle
-        { name: "Gold", metal: "#d4af37", accent: "#d4af37", beam: "#ffe3a3", confetti: ["#d4af37", "#ffffff", "#ffe3a3", "#c0392b", "#2e86de"] },
-        { name: "Sapphire", metal: "#9bb7ff", accent: "#6ea8ff", beam: "#bcd7ff", confetti: ["#6ea8ff", "#ffffff", "#bcd7ff", "#f5c542", "#ff6b9d"] },
-        { name: "Emerald", metal: "#7fe0b0", accent: "#3ddc97", beam: "#c9ffe6", confetti: ["#3ddc97", "#ffffff", "#c9ffe6", "#f5c542", "#ff7a59"] }
-      ]
+      themes: [{ name: "Gold", metal: "#b58a17", accent: "#b58a17", beam: "#e3c66d", confetti: ["#b58a17", "#ffffff", "#ffe3a3", "#c0392b", "#2e86de"] }]
     };
 
     /* =====================================================================
@@ -1086,21 +1186,59 @@
       }
       function fallback() {
         const f = $("fallback"); f.textContent = "";
+        const likeStatus = $("likeStatus");
+        const likesKey = "campaign-portrait-likes";
+        let likedPortraits = new Set();
+        try {
+          const saved = JSON.parse(localStorage.getItem(likesKey) || "[]");
+          if (Array.isArray(saved)) likedPortraits = new Set(saved.filter(id => CONFIG.portraits.some(p => p.id === id)));
+        } catch (error) {
+          console.error("Could not load saved portrait likes:", error);
+          likeStatus.textContent = "Saved likes could not be loaded from this browser.";
+        }
+
         CONFIG.portraits.forEach(p => {
           const c = document.createElement("article"); c.className = "card"; c.tabIndex = 0;
-          const idx = CONFIG.portraits.indexOf(p);
           const openCampaign = () => {
-            domConfetti(c, 40); showDetail(idx);
             CampaignExperience.open(p.id);
           };
           c.addEventListener("click", openCampaign);
-          c.addEventListener("mouseenter", () => domConfetti(c, 14));
-          c.addEventListener("keydown", e => { if (e.key === "Enter") { domConfetti(c, 40); openCampaign(); } });
-          const ph = document.createElement("div"); ph.className = "ph"; ph.textContent = "Photo unavailable";
-          if (p.image) { const im = new Image(); im.alt = p.name; im.onload = () => { ph.textContent = ""; ph.style.backgroundImage = `url("${p.image}")`; }; im.src = p.image; }
+          c.addEventListener("keydown", e => { if (e.key === "Enter" && e.target === c) openCampaign(); });
+          const ph = document.createElement("div"); ph.className = "ph";
+          const placeholder = document.createElement("span"); placeholder.textContent = "Photo unavailable"; ph.appendChild(placeholder);
+          if (p.image) {
+            const im = new Image(); im.alt = p.name;
+            im.onload = () => ph.classList.add("loaded");
+            im.onerror = () => im.remove();
+            ph.appendChild(im); im.src = p.image;
+          }
           const h = document.createElement("h2"); h.textContent = p.name;
           const t = document.createElement("p"); t.textContent = p.displayLines ? p.displayLines.filter(line => line !== p.name).join(" · ") : p.title + " · " + p.label;
-          c.append(ph, h, t); f.appendChild(c);
+          const like = document.createElement("button"); like.className = "portrait-like"; like.type = "button";
+          like.setAttribute("aria-label", `Like ${p.name}'s portrait. Likes are saved in this browser only.`);
+          like.title = "Likes are saved in this browser only.";
+          const updateLike = () => {
+            const isLiked = likedPortraits.has(p.id);
+            like.setAttribute("aria-pressed", String(isLiked));
+            like.textContent = isLiked ? "♥ Liked" : "♡ Like";
+          };
+          like.addEventListener("click", event => {
+            event.stopPropagation();
+            if (likedPortraits.has(p.id)) likedPortraits.delete(p.id);
+            else likedPortraits.add(p.id);
+            try {
+              localStorage.setItem(likesKey, JSON.stringify([...likedPortraits]));
+              likeStatus.textContent = "";
+            } catch (error) {
+              if (likedPortraits.has(p.id)) likedPortraits.delete(p.id);
+              else likedPortraits.add(p.id);
+              console.error("Could not save portrait like:", error);
+              likeStatus.textContent = "Your like could not be saved. Check this browser's storage settings.";
+            }
+            updateLike();
+          });
+          updateLike();
+          c.append(ph, h, t, like); f.appendChild(c);
         });
       }
       function showDetail(i) {
@@ -1155,6 +1293,24 @@
         statement: '"My People, I Endorse Seyi — 2027 Movement for Nigeria."',
         intro: "Seyi Makinde is the Executive Governor of Oyo State and has positioned his public-service record around infrastructure, education, healthcare, agricultural development, and stronger social delivery. The campaign experience below is designed to present a structured overview of reported achievements and public-service priorities without making unsupported claims.",
         record: "Leadership, public service, infrastructure, education, healthcare, economic opportunity, and a vision for Nigeria's future.",
+        message: {
+          title: "A HEARTFELT TRIBUTE TO HIS EXCELLENCY, ENGR. OLUWASEYI ABIODUN MAKINDE",
+          role: "Executive Governor of Oyo State",
+          subtitle: "A Message of Appreciation, Gratitude, and Prayer for Greater Leadership",
+          sections: [
+            { paragraphs: ["Today, I want to sincerely appreciate a remarkable leader, a man whose administration has made significant efforts toward the development of Oyo State, His Excellency, Governor Engr. Oluseyi Abiodun Makinde, popularly known as GSM.", "Your Excellency, leadership is not merely about occupying a position of authority; it is about making a meaningful difference in the lives of the people. It is about creating opportunities, improving infrastructure, supporting education, strengthening healthcare, promoting economic growth, and building a better future for the next generation.", "As a grateful citizen of Oyo State, I recognize and appreciate the development efforts your administration has undertaken across different sectors."] },
+            { title: "Infrastructure and Transportation", paragraphs: ["We appreciate the road construction and rehabilitation projects that have improved connections between communities, including strategic road corridors linking Ibadan with other parts of the state.", "We recognize the investments in public transportation, modern bus terminals, and the development of Samuel Ladoke Akintola Airport to improve connectivity and create opportunities for commerce, tourism, and investment.", "These efforts demonstrate the importance of infrastructure in building a stronger economy."] },
+            { title: "Education and Youth Development", paragraphs: ["Your administration's efforts to improve education through classroom rehabilitation, recruitment of teaching personnel, and investment in educational institutions deserve recognition.", "Education is the foundation of a prosperous society. Every classroom improved and every opportunity given to a young person can contribute to a brighter future for Oyo State and Nigeria.", "We pray that your administration will continue to invest in our students, teachers, and young people."] },
+            { title: "Healthcare and Human Welfare", paragraphs: ["We appreciate initiatives such as the Omituntun Free Health Mission, improvements to primary healthcare facilities, recruitment of healthcare personnel, and efforts to make medical services more accessible to ordinary citizens.", "Healthcare should not be a privilege reserved for the wealthy. It is essential to the dignity and well-being of every family.", "May these efforts continue to grow and reach even more people in underserved communities."] },
+            { title: "Agriculture, Employment, and Economic Growth", paragraphs: ["We recognize the development of agribusiness initiatives, including the Fasola and Eruwa agricultural transformation projects, as well as programs supporting farmers and agricultural mechanization.", "We also appreciate efforts to attract investors, develop commercial infrastructure, support local businesses, and create opportunities for young people.", "When farmers are supported, businesses grow, and employment opportunities expand, families and communities have a better chance of prospering."] },
+            { title: "Security and Community Development", paragraphs: ["We appreciate your administration's support for Operation Amotekun, security patrol vehicles, forest rangers, streetlighting initiatives, and collaboration with security agencies.", "Peace and security are essential for education, business, farming, and everyday life. We pray that Oyo State will continue to experience greater peace, stability, and progress."] },
+            { title: "Sports, Tourism, and Cultural Development", paragraphs: ["We recognize the redevelopment of Lekan Salami Stadium, efforts to support tourism and cultural investment, and the development of infrastructure that can help showcase the heritage and potential of Oyo State to Nigeria and the world.", "Our state has a rich history, a proud cultural identity, and talented people. With continued investment and good planning, Oyo State can achieve even greater things."] },
+            { title: "Our Sincere Appreciation", paragraphs: ["Your Excellency, we understand that governing a state as important as Oyo comes with enormous responsibilities and difficult decisions. No administration can solve every problem at once, but every sincere effort toward improving people's lives deserves recognition.", "We appreciate the work already done, the projects underway, and the opportunities created. We also encourage your administration to continue addressing the needs of rural communities, unemployed graduates, traders, artisans, farmers, teachers, healthcare workers, and vulnerable families.", "May the benefits of development continue to reach every local government, every community, and every household across Oyo State."] },
+            { title: "Our Prayer for Governor Seyi Makinde", paragraphs: ["Almighty God, the Creator of heaven and earth, we commit Governor Seyi Makinde into Your hands.", "Grant him wisdom to make the right decisions, strength to fulfill his responsibilities, good health to continue serving humanity, and courage to stand for justice and the common good.", "Protect him from harm, guide his advisers, bless his family, and surround him with people who genuinely desire the progress of Oyo State and Nigeria.", "May You grant him the humility to listen to the people, the patience to overcome challenges, and the determination to complete projects that will benefit generations yet unborn.", "Almighty God, if it is Your will and for the good of the Nigerian people, may You elevate Governor Seyi Makinde to the highest levels of national leadership, including the office of President of the Federal Republic of Nigeria.", "May You prepare him for greater responsibilities, grant him the wisdom to unite our diverse people, and enable him to contribute to a Nigeria where citizens enjoy greater security, quality education, accessible healthcare, reliable infrastructure, economic opportunity, and justice.", "May Nigeria experience peace, prosperity, responsible leadership, and national unity. May the Almighty guide whoever leads our nation toward decisions that serve the interests of all Nigerians.", "Your Excellency, our prayer is that your service to Oyo State will leave a legacy of progress, integrity, compassion, and sustainable development."] },
+            { paragraphs: ["Thank you for your service to our dear state. Thank you for the development efforts and opportunities your administration has pursued."], signoff: true },
+            { paragraphs: ["May Almighty God continue to bless you, Governor Seyi Makinde. May He bless Oyo State and the Federal Republic of Nigeria.", "Long live Oyo State. Long live Nigeria.", "With sincere appreciation, prayers, and goodwill."], signoff: true }
+          ]
+        },
         image: "makinde.jpg",
         slogans: [
           "SEYI 2027 — Movement for Nigeria",
@@ -1183,6 +1339,15 @@
         statement: '"Public service, institutional accountability, and strategic governance."',
         intro: "Hon. Abimbola Bimbo Adekanmbi has built a profile around public finance, administrative leadership, and strategic governance. His career includes service as Commissioner for Finance and Revenue Planning in Oyo State and later coordinating executive office operations in the state government.",
         record: "Administrative leadership, public finance management, institutional coordination, and governance reform.",
+        message: {
+          title: "A Special Appreciation to Hon. Bimbo Adekanmbi",
+          role: "Hon. Abimbola (Bimbo) Adekanmbi — Acknowledging Public Service and Commitment to Oyo State",
+          sections: [
+            { paragraphs: ["We sincerely appreciate Hon. Bimbo Adekanmbi for his contributions to public service and his continued involvement in the development of Oyo State.", "As a son of Ibadan and a professional with experience in finance, administration, and business, Hon. Adekanmbi has served Oyo State in important public offices, including Deputy Chief of Staff and Commissioner for Finance, Budget and Planning. His professional background and experience in public administration have formed part of his contribution to the state's governance and development.", "We also acknowledge his involvement in community development, youth empowerment, and educational support initiatives, which have been reported over the years. His participation in the committee established to consider the upgrade of Samuel Ladoke Akintola Airport, Ibadan, further reflects his involvement in discussions about infrastructure and the future development of the state.", "Public service is a responsibility that calls for dedication, accountability, humility, and a sincere commitment to the well-being of the people. We hope that these values will continue to guide his service to Oyo State and its residents."] },
+            { title: "Our Prayers and Good Wishes", paragraphs: ["May Almighty God grant Hon. Bimbo Adekanmbi good health, wisdom, strength, patience, and the courage to serve humanity with sincerity. May God guide his decisions, bless his family, protect him from harm, and grant him the grace to make meaningful contributions to education, youth development, economic growth, and community welfare.", "May Oyo State continue to experience peace, unity, progress, and opportunities for all its people. May every effort directed toward the public good yield lasting benefits for present and future generations."] },
+            { paragraphs: ["We wish Hon. Bimbo Adekanmbi continued wisdom, success in his endeavors, and the strength to keep contributing positively to the development of Oyo State.", "With respect and best wishes for a peaceful, united, and prosperous Oyo State."], signoff: true }
+          ]
+        },
         image: "Adekanmi.jpg",
         slogans: [
           "Leadership, Service and Accountability",
@@ -1201,6 +1366,22 @@
         statement: '"Technology, opportunity, and community-driven development."',
         intro: "Hon. Adedeji Stanley Olajide Odidiomo is widely associated with digital technology, youth development, grassroots philanthropy, and public-interest advocacy. His profile highlights professional recognition in ICT and a record of educational, technological, and community support initiatives.",
         record: "Digital infrastructure, technology leadership, youth empowerment, and grassroots development.",
+        message: {
+          title: "A TRIBUTE TO HON. ADEDEJI ODIDIOMO",
+          role: "Hon. Adedeji Dhikrullahi Stanley Olajide (Odidiomo)",
+          subtitle: "Appreciation, Recognition, and Prayers for Continued Service",
+          sections: [
+            { paragraphs: ["Today, I want to express my sincere appreciation to Hon. Adedeji Dhikrullahi Stanley Olajide, popularly known as Odidiomo, for his reported contributions to constituency development, education, digital technology, community infrastructure, and the welfare of the people of Ibadan.", "Public service carries a great responsibility. It requires listening to the people, identifying their needs, creating opportunities, and working toward practical solutions. We recognize the importance of these responsibilities and appreciate the efforts made to address challenges facing communities."] },
+            { title: "Education and Digital Technology", paragraphs: ["One of the important areas of development is education.", "We appreciate the reported establishment of digital learning centers in secondary schools, including African Church Grammar School, Apata; Our Lady of Apostles Secondary School, Odo-Ona, Apata; Army Barracks Grammar School, Eleyele; and Ibadan Boys High School.", "These centers can help students gain access to digital learning resources and develop the technology skills needed in today's world.", "As Nigeria continues to embrace digital transformation, investments in the education of young people can help prepare them for future opportunities in software development, artificial intelligence, cybersecurity, entrepreneurship, and other technology-related careers.", "We encourage continued investment in our students and in educational opportunities for young people from disadvantaged backgrounds."] },
+            { title: "Solar Streetlights and Community Development", paragraphs: ["We also recognize the reported installation of 100 units of solar-powered streetlights across communities in Ibadan North-West and Ibadan South-West Federal Constituency.", "Access to public lighting is an important community need. Solar streetlights can improve nighttime visibility, support movement after dark, and contribute to the security and comfort of residents.", "We appreciate efforts directed toward improving public infrastructure and encourage the continued maintenance and expansion of such projects where communities need them."] },
+            { title: "Electricity and Basic Infrastructure", paragraphs: ["We recognize reports of electricity infrastructure support, including the donation of a 1,000 KVA transformer to the Elekunkun Idera Community.", "Reliable electricity is essential for households, schools, healthcare facilities, artisans, traders, and small businesses.", "We hope that interventions of this nature will continue to reach communities facing electricity challenges and help create better conditions for economic activity and community development."] },
+            { title: "Healthcare, Water, and Community Welfare", paragraphs: ["We also recognize reported constituency development initiatives covering healthcare, water supply, and other community needs.", "Access to clean water and healthcare can make a significant difference in the lives of ordinary families. These are essential services that deserve sustained attention, transparent implementation, and proper maintenance.", "We encourage continued engagement with community leaders and residents to identify areas where assistance is most urgently needed."] },
+            { title: "Legislative Representation and Digital Development", paragraphs: ["As a member of the House of Representatives and Chairman of the House Committee on Digital, Information Communication Technology and Cybersecurity, Hon. Odidiomo has been involved in legislative work related to technology and national development.", "We recognize the importance of legislation, oversight, and stakeholder engagement in addressing Nigeria's challenges.", "We hope that continued work in these areas will support stronger digital infrastructure, safer technology systems, improved digital education, and greater opportunities for Nigerian businesses and young innovators."] },
+            { title: "Our Message of Appreciation", paragraphs: ["Hon. Odidiomo, we appreciate the efforts you have made in representing your constituency and pursuing projects intended to improve the lives of residents.", "We recognize that development is an ongoing process and that communities continue to have needs relating to roads, employment, electricity, education, healthcare, and economic empowerment.", "We therefore encourage continued dialogue with constituents, transparency in public service, and attention to communities that still require support.", "Our appreciation is not only about completed projects. It is also about encouraging a culture of accountability, compassion, and practical service to the people."] },
+            { title: "Our Prayers for Hon. Odidiomo", paragraphs: ["Almighty God, we commit Hon. Adedeji Dhikrullahi Stanley Olajide into Your hands.", "Grant him wisdom, good health, strength, humility, and the courage to carry out his responsibilities with integrity.", "Guide his decisions and help him recognize the needs of the people he represents. Protect him and his family, bless his legitimate endeavors, and surround him with advisers who value honesty, justice, and the common good.", "May Almighty God grant him the ability to serve humanity more effectively, support the development of our communities, and contribute to a future in which young people have access to quality education, employment, technology, and opportunities to succeed.", "May God bless every genuine effort made to improve the lives of ordinary citizens. May He grant our communities peace, our families prosperity, and our nation responsible leadership.", "We pray that Hon. Odidiomo's public service will continue to be guided by wisdom, accountability, and concern for the welfare of the people.", "May Almighty God bless Hon. Adedeji Odidiomo, bless Ibadan, bless Oyo State, and bless the Federal Republic of Nigeria."] },
+            { paragraphs: ["Thank you for your service, your reported community development initiatives, and your contributions to discussions about Nigeria's digital future.", "Long live Ibadan.", "Long live Oyo State.", "Long live the Federal Republic of Nigeria.", "With sincere appreciation and prayers for continued service to humanity."], signoff: true }
+          ]
+        },
         image: "Odidiomo.jpg",
         slogans: [
           "Innovation. Inclusion. Impact.",
@@ -1269,6 +1450,19 @@
         const profile = CANDIDATE_CAMPAIGNS[profileKey] || CANDIDATE_CAMPAIGNS.makinde;
         const slogans = profile.slogans.map(item => `<li>${item}</li>`).join("");
         const courtesyButton = profileKey === "courtesy" ? "" : '<button class="campaign-courtesy" type="button" data-open-courtesy>🤝 View Courtesy Page</button>';
+        const messageContent = profile.message ? `
+          <article class="campaign-message">
+            <h3>${profile.message.title}</h3>
+            <p class="message-role">${profile.message.role}</p>
+            <p class="message-subtitle">${profile.message.subtitle}</p>
+            ${profile.message.sections.map(section => `
+              <section>
+                ${section.title ? `<h4>${section.title}</h4>` : ""}
+                ${section.paragraphs.map(paragraph => `<p${section.signoff ? ' class="message-signoff"' : ""}>${paragraph}</p>`).join("")}
+              </section>
+            `).join("")}
+          </article>
+        ` : `<p>${profile.record}</p>`;
         const achievements = profile.achievements.map(group => `
           <div class="campaign-section">
             <div class="campaign-section-header"><h3>${group.title}</h3><span>Programme focus</span></div>
@@ -1311,7 +1505,7 @@
           ${courtesyButton}
           <section class="campaign-hero">
             <div>
-              <div class="campaign-badge">Campaign Profile</div>
+              <div class="campaign-badge">Profile</div>
               <h2 id="campaignTitle">${profile.headline}</h2>
               <h3>${profile.subheadline}</h3>
               <div class="campaign-statement">${profile.statement}</div>
@@ -1328,8 +1522,8 @@
 
           <div class="campaign-grid">
             <div class="campaign-card">
-              <h4>Campaign message</h4>
-              <p>${profile.record}</p>
+              <h4>Message</h4>
+              ${messageContent}
             </div>
             <div class="campaign-card">
               <h4>Slogans</h4>
@@ -1651,47 +1845,22 @@
     (async function boot() {
       UI.init();
       const root = document.documentElement, $ = id => document.getElementById(id);
-      let webgl = false, themeIdx = 0;
       CampaignExperience.init();
-      if (Scene3D.supported()) {
-        try {
-          await Scene3D.init($("stage")); Scene3D.setOnSelect((idx) => {
-            UI.showDetail(idx);
-            CampaignExperience.open(CONFIG.portraits[idx].id);
-          }); webgl = true;
-        }
-        catch (err) { console.error("3D init failed, using fallback:", err); Scene3D.dispose(); }
-      }
-      if (!webgl) root.classList.add("no-webgl");
 
-      // Keyboard-accessible profile buttons (focus = hover, Enter = click)
-      CONFIG.portraits.forEach((p, i) => {
+      CONFIG.portraits.forEach(p => {
         const b = document.createElement("button"); b.className = "sr"; b.textContent = "View profile: " + p.name;
-        b.onclick = () => {
-          if (webgl) Scene3D.select(i);
-          else UI.showDetail(i);
-          CampaignExperience.open(p.id);
-        };
-        b.onfocus = () => webgl && Scene3D.hover(i); b.onblur = () => webgl && Scene3D.hover(-1);
+        b.onclick = () => CampaignExperience.open(p.id);
         $("hits").appendChild(b);
       });
 
-      const celebrate = () => webgl ? Scene3D.celebrate() : document.querySelectorAll(".card").forEach(c => UI.domConfetti(c, 30));
-      const setTheme = n => {
-        themeIdx = n % CONFIG.themes.length; const th = CONFIG.themes[themeIdx];
-        Object.assign(CONFIG.colors, { metal: th.metal, accent: th.accent, beam: th.beam });
-        UI.applyTheme(); if (webgl) Scene3D.setTheme(th); $("bTheme").textContent = "🎨 " + th.name;
-      };
       const openCourtesy = () => CampaignExperience.open("courtesy");
       const fullscreen = () => document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen && root.requestFullscreen();
-      $("bCel").onclick = celebrate; $("bTheme").onclick = () => setTheme(themeIdx + 1);
       $("bPause").onclick = openCourtesy; $("bFs").onclick = fullscreen;
       if (!document.fullscreenEnabled) $("bFs").hidden = true;
       addEventListener("keydown", e => {
         if (e.ctrlKey || e.metaKey || e.altKey) return; const k = e.key.toLowerCase();
-        if (k === "c") celebrate(); else if (k === "t") setTheme(themeIdx + 1);
-        else if (k === "f") fullscreen(); else if (k === "escape") UI.hideDetail();
-        else if (/^[1-9]$/.test(k) && CONFIG.portraits[k - 1]) webgl ? Scene3D.select(k - 1) : UI.showDetail(k - 1);
+        if (k === "f") fullscreen(); else if (k === "escape") UI.hideDetail();
+        else if (/^[1-9]$/.test(k) && CONFIG.portraits[k - 1]) CampaignExperience.open(CONFIG.portraits[k - 1].id);
       });
     })();
   </script>
