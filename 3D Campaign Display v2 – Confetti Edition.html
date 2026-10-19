@@ -112,10 +112,19 @@
 
     .sub {
       margin: .4em 0 0;
-      color: var(--muted);
-      font: clamp(.7rem, 1.6vw, 1rem) system-ui, sans-serif;
+      color: #258bff;
+      font: 700 clamp(1rem, 2.2vw, 1.4rem) system-ui, sans-serif;
       letter-spacing: .18em;
-      text-transform: uppercase
+      text-transform: uppercase;
+      -webkit-text-stroke: 1px #d4af37;
+      paint-order: stroke fill;
+      animation: subtitleGlow 1.8s ease-in-out infinite
+    }
+
+    @keyframes subtitleGlow {
+      50% {
+        text-shadow: 0 0 6px #fff, 0 0 15px #d4af37, 0 0 25px #d4af37
+      }
     }
 
     .clock {
@@ -422,6 +431,35 @@
     .campaign-actions button:focus-visible {
       transform: translateY(-1px);
       outline: none
+    }
+
+    .campaign-courtesy {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 0 18px;
+      padding: 10px 18px;
+      border: 1px solid #f0d278;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #f5d77d, #b78b25);
+      color: #171208;
+      font: 700 .9rem system-ui, sans-serif;
+      cursor: pointer;
+      animation: courtesyGlow 1.8s ease-in-out infinite
+    }
+
+    .campaign-courtesy:hover,
+    .campaign-courtesy:focus-visible {
+      transform: translateY(-2px);
+      outline: 2px solid #fff1bd;
+      outline-offset: 3px
+    }
+
+    @keyframes courtesyGlow {
+      50% {
+        box-shadow: 0 0 18px #f5d77d99;
+        transform: translateY(-2px)
+      }
     }
 
     .campaign-section {
@@ -763,6 +801,14 @@
       display: none
     }
 
+    .reduce .sub {
+      animation: none
+    }
+
+    .reduce .campaign-courtesy {
+      animation: none
+    }
+
     /* ===== v2 ===== */
     .controls {
       position: absolute;
@@ -851,7 +897,8 @@
     #detail p {
       margin: .2em 0;
       color: var(--muted);
-      font: .95rem system-ui, sans-serif
+      font: .95rem system-ui, sans-serif;
+      white-space: pre-line
     }
 
     #detail .lab {
@@ -923,9 +970,8 @@
       </div>
     </header>
     <main>
-      <canvas id="stage" role="img" aria-label="3D stage showing three portrait panels"></canvas>
+      <canvas id="stage" role="img" aria-label="3D stage showing four portrait panels"></canvas>
       <div id="fallback" aria-label="Portrait panels"></div>
-      <p class="hint">Hover or tap a portrait for confetti · keys: C celebrate · T theme · F fullscreen</p>
       <div id="hits"></div>
       <aside id="detail" role="dialog" aria-live="polite" aria-labelledby="dName"><button id="dClose"
           aria-label="Close">×</button>
@@ -965,9 +1011,10 @@
     const CONFIG = {
       heading: { text: "APM", goldWords: [1], subtitle: "Allied Peoples Movement" },
       portraits: [
-        { id: "adekanmbi", name: "Hon. Abimbola \"Bimbo\" Adekanmbi", title: "Candidate", label: "APM Candidate", image: "Adekanmi.jpg", note: "" },
-        { id: "makinde", name: "ABIODUN SEYI MAKINDE", title: "Candidate", label: "APM Candidate", image: "makinde.jpg", note: "" },
-        { id: "odidiomo", name: "Hon. Adedeji Stanley Olajide Odidiomo", title: "Candidate", label: "APM Candidate", image: "Odidiomo.jpg", note: "" }
+        { id: "adekanmbi", name: "Hon. Abimbola Bimbo Adekanmbi", title: "Gubernatorial Candidate of Oyo State", label: "APM Candidate", image: "Adekanmi.jpg", note: "" },
+        { id: "makinde", name: "ABIODUN SEYI MAKINDE", title: "His Excellency Governor\nOyo State", label: "APM President Candidate", displayLines: ["His Excellency Governor", "ABIODUN SEYI MAKINDE", "Oyo State", "APM President Candidate"], image: "makinde.jpg", note: "" },
+        { id: "agboworin", name: "Hon. Abass Adigun Agboworin", title: "Member, House of Representatives", label: "Ibadan North-East/South-East Federal Constituency", image: "agboworin.jpg", note: "A tribute of appreciation from Aremo Community, Ibadan." },
+        { id: "odidiomo", name: "Hon. Adedeji Stanley Olajide Odidiomo", title: "Member, House of Representatives\nCandidate\nOyo South Senatorial District", label: "APM Candidate", displayLines: ["Member, House of Representatives", "Hon. Adedeji Stanley Olajide Odidiomo", "Candidate", "Oyo South Senatorial District", "APM Candidate"], image: "Odidiomo.jpg", note: "" }
       ],
       ticker: [
         "SEYI 2027 — Movement for Nigeria",
@@ -1052,7 +1099,7 @@
           const ph = document.createElement("div"); ph.className = "ph"; ph.textContent = "Photo unavailable";
           if (p.image) { const im = new Image(); im.alt = p.name; im.onload = () => { ph.textContent = ""; ph.style.backgroundImage = `url("${p.image}")`; }; im.src = p.image; }
           const h = document.createElement("h2"); h.textContent = p.name;
-          const t = document.createElement("p"); t.textContent = p.title + " · " + p.label;
+          const t = document.createElement("p"); t.textContent = p.displayLines ? p.displayLines.filter(line => line !== p.name).join(" · ") : p.title + " · " + p.label;
           c.append(ph, h, t); f.appendChild(c);
         });
       }
@@ -1166,6 +1213,50 @@
           { title: "Community & Philanthropy", items: [{ name: "Support to Markets and Community Groups", description: "Made multi-million naira donations and financial interventions to local associations, markets, and religious communities, alongside free medical outreaches and economic empowerment programmes in agriculture and trades.", status: "ongoing", year: "2024–2027", source: "https://x.com/AdedejiOdidiOmo", verified: "2025" }] }
         ],
         timeline: [{ date: "2025", title: "FNCS conferment", description: "Hon. Adedeji Stanley Olajide Odidiomo was conferred as a Fellow of the Nigeria Computer Society in recognition of his contributions to ICT and digital development.", type: "historical" }, { date: "2025", title: "Youth digital empowerment programme", description: "He partnered with NITDA to train youths and provide laptops for digital skills development.", type: "completed" }, { date: "2024–2027", title: "Community and infrastructure support", description: "He continued to support solar lighting, infrastructure projects, educational support, and grassroots empowerment efforts.", type: "ongoing" }]
+      },
+      agboworin: {
+        fullName: "Hon. Abass Adigun Agboworin",
+        headline: "A TRIBUTE TO A GOOD LEADER",
+        subheadline: "A Message of Appreciation from Aremo Community, Ibadan, Oyo State",
+        statement: '"Leadership is about making a difference that ordinary people can see and experience in their daily lives."',
+        intro: "A personal message of gratitude from a member of Aremo Community for Hon. Abass Adigun Agboworin’s service and community support.",
+        record: "Community appreciation for education, youth and women’s empowerment, healthcare, infrastructure, security, and support for Aremo Community.",
+        image: "agboworin.jpg",
+        slogans: [
+          "Leadership People Can See and Experience",
+          "Education, Opportunity and Community Development",
+          "Aremo Community Appreciates Your Service",
+          "Listening to the People, Building Our Communities"
+        ],
+        tribute: [
+          "Today, we want to use this opportunity to appreciate a man who has continued to demonstrate commitment to the welfare, development, and progress of his people: Hon. Abass Adigun Agboworin, the lawmaker representing Ibadan North-East/South-East Federal Constituency in the House of Representatives.",
+          "A good leader is not measured by words alone, but by the positive impact he makes in the lives of the people he represents. Through educational support, youth empowerment, healthcare initiatives, road projects, electricity, security, and community development, Hon. Abass Adigun Agboworin has demonstrated his commitment to serving his constituency.",
+          "In education, he has supported students through free tutorial programs, WAEC, NECO, and JAMB registration forms, scholarships, textbooks, and other learning materials. These initiatives give our young people hope and opportunities to build a brighter future.",
+          "In economic empowerment, he has supported traders, artisans, youths, and women through financial assistance, vocational equipment, and business opportunities. These efforts help people develop their skills, support their families, and become more financially independent.",
+          "In healthcare and infrastructure, his constituency has benefited from medical outreach initiatives, ambulance buses, road rehabilitation, solar-powered boreholes, and other community development projects.",
+          "He has also supported security agencies, community security initiatives, sports development, and welfare programs aimed at improving the lives of ordinary people.",
+          "But beyond the reports and announcements, I have a personal experience I will never forget.",
+          "When I returned from school and came back to Aremo Community, I saw something beautiful: new solar-powered streetlights illuminating our community. The streets looked different, and I could see the positive impact of this development with my own eyes.",
+          "It was a moment that reminded me that leadership is not just about holding a political position. It is about making a difference that ordinary people can see and experience in their daily lives.",
+          "On behalf of myself and the people who appreciate these developments in Aremo Community, I want to sincerely say thank you, Hon. Abass Adigun Agboworin, for this intervention and for the support you have provided to your people, including palliative assistance during difficult times.",
+          "We recognize and appreciate every genuine effort made to improve our community and the lives of our people.",
+          "Our dear leader, we pray that Almighty God will continue to bless you with wisdom, strength, good health, protection, and greater opportunities to serve humanity. May He reward your good deeds, guide your decisions, and grant you success in all your legitimate endeavors.",
+          "Hon. Abass Adigun Agboworin, please know that Aremo Community stands with you and appreciates your service.",
+          "We encourage you to continue listening to the people, supporting our youths, empowering our women, improving our infrastructure, and bringing more development to our communities.",
+          "Thank you for your service. Thank you for remembering the people. Thank you for the solar streetlights we witnessed in Aremo. And thank you for every effort toward making life better for our constituency.",
+          "May Almighty God continue to bless you and your family.",
+          "Long live Hon. Abass Adigun Agboworin.",
+          "Long live Aremo Community.",
+          "Long live Ibadan North-East/South-East Federal Constituency.",
+          "May Almighty God bless Oyo State and the Federal Republic of Nigeria.",
+          "Signed: A grateful member of Aremo Community."
+        ],
+        achievements: [
+          { title: "Education and Youth Empowerment", items: [{ name: "Student Learning Support", description: "The community tribute expresses appreciation for tutorial programmes, examination registration support, scholarships, textbooks, and other learning materials.", status: "As described in the tribute", year: "Community account", source: "", verified: "As provided" }] },
+          { title: "Economic Empowerment", items: [{ name: "Support for Traders, Artisans, Youths, and Women", description: "The tribute recognises financial assistance, vocational equipment, and business opportunities intended to help people build skills and support their families.", status: "As described in the tribute", year: "Community account", source: "", verified: "As provided" }] },
+          { title: "Healthcare, Infrastructure, and Community Support", items: [{ name: "Community Projects and Services", description: "The message cites medical outreaches, ambulance buses, road rehabilitation, solar-powered boreholes, security and sports support, welfare programmes, and solar streetlights in Aremo, including the writer’s personal account of seeing the lights after returning from school.", status: "As described in the tribute", year: "Community account", source: "", verified: "As provided" }] }
+        ],
+        timeline: [{ date: "Personal account", title: "Solar streetlights in Aremo Community", description: "The writer recalls returning from school and seeing new solar-powered streetlights illuminating the community.", type: "personal" }, { date: "Community tribute", title: "Appreciation for constituency service", description: "Aremo Community’s message thanks Hon. Agboworin for the support and development efforts described in the tribute.", type: "community" }]
       }
     };
 
@@ -1177,6 +1268,7 @@
       function render(profileKey = "makinde") {
         const profile = CANDIDATE_CAMPAIGNS[profileKey] || CANDIDATE_CAMPAIGNS.makinde;
         const slogans = profile.slogans.map(item => `<li>${item}</li>`).join("");
+        const courtesyButton = profileKey === "courtesy" ? "" : '<button class="campaign-courtesy" type="button" data-open-courtesy>🤝 View Courtesy Page</button>';
         const achievements = profile.achievements.map(group => `
           <div class="campaign-section">
             <div class="campaign-section-header"><h3>${group.title}</h3><span>Programme focus</span></div>
@@ -1192,13 +1284,20 @@
                   </summary>
                   <div class="achievement-body">
                     <p>${item.description}</p>
-                    <p><a href="${item.source}" target="_blank" rel="noreferrer">Official source</a> · Updated ${item.verified}</p>
+                    <p>${item.source ? `<a href="${item.source}" target="_blank" rel="noreferrer">Official source</a> · Updated ${item.verified}` : "Based on the community tribute"}</p>
                   </div>
                 </details>
               `).join("")}
             </div>
           </div>
         `).join("");
+
+        const tribute = profile.tribute ? `
+          <div class="campaign-section">
+            <div class="campaign-section-header"><h3>Message of Appreciation</h3><span>From Aremo Community</span></div>
+            <div class="campaign-card">${profile.tribute.map(paragraph => `<p>${paragraph}</p>`).join("")}</div>
+          </div>
+        ` : "";
 
         const timeline = profile.timeline.map(item => `
           <div class="timeline-item">
@@ -1209,6 +1308,7 @@
         `).join("");
 
         body.innerHTML = `
+          ${courtesyButton}
           <section class="campaign-hero">
             <div>
               <div class="campaign-badge">Campaign Profile</div>
@@ -1237,6 +1337,8 @@
             </div>
           </div>
 
+          ${tribute}
+
           <div id="campaign-achievements" class="campaign-section">
             <div class="campaign-section-header"><h3>Reported achievements</h3><span>Public record overview</span></div>
             ${achievements}
@@ -1249,6 +1351,8 @@
         `;
 
         body.querySelector("[data-campaign-close]").addEventListener("click", close);
+        const courtesyLink = body.querySelector("[data-open-courtesy]");
+        if (courtesyLink) courtesyLink.addEventListener("click", () => open("courtesy"));
         body.querySelector("a[href='#campaign-achievements']").addEventListener("click", event => {
           event.preventDefault();
           document.getElementById("campaign-achievements").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1317,7 +1421,11 @@
         g.strokeStyle = col.metal; g.lineWidth = 6; g.strokeRect(8, 8, 1008, 240);
         g.textAlign = "center"; g.fillStyle = col.text;
         const fit = (t, size, weight, y, color) => { let s = size; g.fillStyle = color; do { g.font = `${weight} ${s}px Georgia,serif`; s -= 2; } while (g.measureText(t).width > 940 && s > 12); g.fillText(t, 512, y); };
-        fit(p.name, 84, 700, 104, col.text); fit(p.title, 46, 400, 160, col.muted); fit(p.label.toUpperCase(), 36, 600, 214, col.accent);
+        const lines = p.displayLines || [p.name, p.title, p.label.toUpperCase()];
+        const sizes = lines.length === 5 ? [32, 48, 30, 30, 30] : lines.length === 4 ? [34, 58, 34, 32] : [66, 40, 32];
+        const startY = lines.length === 5 ? 42 : lines.length === 4 ? 59 : 82;
+        const spacing = lines.length === 5 ? 46 : lines.length === 4 ? 59 : 68;
+        lines.forEach((line, i) => fit(line, sizes[i], i === 0 && lines.length === 3 || i === 1 && lines.length > 3 ? 700 : 500, startY + i * spacing, i === 0 && lines.length === 3 || i === 1 && lines.length > 3 ? col.text : i === lines.length - 1 ? col.accent : col.muted));
         return c;
       }
       return { load, nameplate };
@@ -1368,12 +1476,13 @@
         const metal = getMetal();
         const dark = track(new THREE.MeshStandardMaterial({ color: col(CONFIG.colors.stage), metalness: 0.5, roughness: 0.45 }));
         const gm = (g) => track(g);
-        const floor = new THREE.Mesh(gm(new THREE.BoxGeometry(14, 0.4, 6)), dark); floor.position.set(0, -2.4, 0); floor.receiveShadow = true; scene.add(floor);
-        const trim = new THREE.Mesh(gm(new THREE.BoxGeometry(14.3, 0.1, 6.3)), metal); trim.position.set(0, -2.17, 0); trim.receiveShadow = true; scene.add(trim);
+        const stageWidth = Math.max(14, (CONFIG.portraits.length - 1) * 4.2 + 5);
+        const floor = new THREE.Mesh(gm(new THREE.BoxGeometry(stageWidth, 0.4, 6)), dark); floor.position.set(0, -2.4, 0); floor.receiveShadow = true; scene.add(floor);
+        const trim = new THREE.Mesh(gm(new THREE.BoxGeometry(stageWidth + 0.3, 0.1, 6.3)), metal); trim.position.set(0, -2.17, 0); trim.receiveShadow = true; scene.add(trim);
         const wall = new THREE.Mesh(gm(new THREE.PlaneGeometry(26, 12)), track(new THREE.MeshStandardMaterial({ color: 0x10131c, roughness: 0.9 })));
         wall.position.set(0, 2, -3.2); wall.receiveShadow = true; scene.add(wall);
         [-1, 1].forEach(s => { // layered side columns for depth
-          const col1 = new THREE.Mesh(gm(new THREE.BoxGeometry(0.35, 7, 0.6)), metal); col1.position.set(s * 6.9, 1, -2.4); col1.castShadow = true; scene.add(col1);
+          const col1 = new THREE.Mesh(gm(new THREE.BoxGeometry(0.35, 7, 0.6)), metal); col1.position.set(s * (stageWidth / 2 - 0.1), 1, -2.4); col1.castShadow = true; scene.add(col1);
         });
       }
 
@@ -1387,7 +1496,8 @@
 
       function buildBeams() {
         const geo = track(new THREE.ConeGeometry(1.1, 10, 24, 1, true));
-        [-4.2, 0, 4.2].forEach((x, i) => {
+        CONFIG.portraits.forEach((_, i) => {
+          const x = (i - (CONFIG.portraits.length - 1) / 2) * 4.2;
           const m = track(new THREE.MeshBasicMaterial({ color: col(CONFIG.colors.beam), transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
           const b = new THREE.Mesh(geo, m); b.position.set(x, 3.2, -0.8); b.userData = { base: 0.07, phase: i * 2 }; scene.add(b); beams.push(b);
         });
@@ -1408,7 +1518,7 @@
         const imgGeo = track(new THREE.PlaneGeometry(2.8, 3.73)), plateGeo = track(new THREE.PlaneGeometry(3.1, 0.775));
         const canv = await Promise.all(CONFIG.portraits.map(Tex.load));
         CONFIG.portraits.forEach((p, i) => {
-          const grp = new THREE.Group(), x = (i - 1) * 4.2;
+          const grp = new THREE.Group(), x = (i - (CONFIG.portraits.length - 1) / 2) * 4.2;
           const frame = new THREE.Mesh(frameGeo, metal); frame.castShadow = frame.receiveShadow = true;
           const bk = new THREE.Mesh(backGeo, back); bk.position.z = 0.09; bk.receiveShadow = true;
           const t = track(new THREE.CanvasTexture(canv[i])); t.encoding = THREE.sRGBEncoding;
@@ -1482,7 +1592,7 @@
         const small = w < 700;
         renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small ? 1.5 : CONFIG.scene.maxPixelRatio));
         renderer.setSize(w, h, false); camera.aspect = w / h;
-        const halfW = 7.4, fov = camera.fov * Math.PI / 180;
+        const halfW = Math.max(7.4, (CONFIG.portraits.length - 1) * 2.1 + 1.65), fov = camera.fov * Math.PI / 180;
         camera.userData.z = Math.max(10, halfW / (Math.tan(fov / 2) * camera.aspect), 6.2 / Math.tan(fov / 2) / 1.0 * 0.5);
         camera.updateProjectionMatrix(); frame(0, true);
       }
